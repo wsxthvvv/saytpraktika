@@ -141,3 +141,295 @@ code {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(225, 6, 0, 0.2);
 }
+
+
+.service-card__pricing {
+  margin-top: 20px;
+}
+
+.service-card__pricing h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.pricing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pricing-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee; /* тонкая линия между строками */
+}
+
+.pricing-item:last-child {
+  border-bottom: none;
+}
+
+.pricing-label {
+  color: #555; /* серый цвет слева */
+  flex: 1;
+  min-width: 120px;
+  word-break: break-word;
+  font-weight: 400;
+}
+
+.pricing-value {
+  color: #dc2626; /* красный цвет справа */
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 90px;
+}
+
+
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  z-index: 100;
+}
+
+.nav-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 24px;
+}
+
+.nav-list a {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-list a.active {
+  color: #dc2626;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Стили для CryptoTicker (уже есть, но на всякий случай) */
+.crypto-ticker {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 14px;
+  color: #333;
+}
+
+.crypto-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crypto-price {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.crypto-change {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.crypto-change.positive {
+  color: #0d9652;
+  background-color: rgba(13, 150, 82, 0.1);
+}
+
+.crypto-change.negative {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+/* ============== Графики ============== */
+.charts-page {
+  padding: 40px 20px;
+  background: #fafafa;
+  min-height: 100vh;
+}
+
+.charts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.charts-header h2 {
+  font-size: 28px;
+  color: #1f2937;
+}
+
+.charts-container {
+  display: flex;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.charts-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chart-box {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.chart-box h3 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.chart-placeholder {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.charts-right {
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.price-card h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 18px;
+  color: #333;
+}
+
+.price-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.price-item:last-child {
+  border-bottom: none;
+}
+
+.price-item.satoshi-item {
+  background: #fff8e1;
+  border-radius: 8px;
+  padding: 12px;
+  border: none;
+}
+
+.sub-label {
+  font-size: 12px;
+  color: #888;
+  margin-left: 6px;
+}
+
+.price-values {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.price-value {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.change {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.change.positive {
+  color: #0d9652;
+  background-color: rgba(13, 150, 82, 0.1);
+}
+
+.change.negative {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+/* Для графиков */
+.chart-box {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-box h3 {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.price-canvas {
+  width: 100%;
+  height: 180px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.chart-loading {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 14px;
+}

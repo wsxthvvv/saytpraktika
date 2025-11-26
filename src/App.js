@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import './App.css';
 import { CartProvider, useCart } from './contexts/CartContext';
 import Header from './components/Header';
-import Footer from './components/Footer'; // 👈 Добавлен импорт Footer
+import Footer from './components/Footer';
 import Services from './components/Services';
 import CryptoConverter from './components/CryptoConverter';
 import Profile from './components/Profile';
@@ -13,6 +13,7 @@ import Blog from './components/Blog';
 import BlogArticle from './components/BlogArticle';
 import MiningEquipment from './components/MiningEquipment';
 import MinerDetail from './components/MinerDetail';
+import ChartsPage from './components/ChartsPage'; // 👈 Импорт страницы графиков
 
 function AppContent() {
   const { itemCount } = useCart();
@@ -72,9 +73,12 @@ function AppContent() {
           <Route path="/blog/:id" element={<BlogArticle />} />
           <Route path="/mining" element={<MiningEquipment />} />
           <Route path="/mining/:id" element={<MinerDetail />} />
+
+          {/* 👇 Маршрут для графиков — ДОБАВЛЕН */}
+          <Route path="/charts" element={<ChartsPage />} />
         </Routes>
       </main>
-      <Footer /> {/* 👈 Подключаем футер здесь */}
+      <Footer />
     </div>
   );
 }

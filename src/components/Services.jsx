@@ -10,7 +10,7 @@ const Services = () => {
     {
       id: 1,
       title: 'Frontend разработка (React)',
-      price: 750,
+      price: 75000,
       description: 'Разработка современных веб-приложений на React с TypeScript и современным стеком технологий.',
       category: 'frontend',
       deliverables: [
@@ -26,7 +26,7 @@ const Services = () => {
         { type: 'Senior Developer', rate: '$40/час' },
         { type: 'Фиксированный проект', rate: '$500 – $1000' }
       ],
-      badge: 'React Expert',
+      badge: 'REACT EXPERT',
       details: {
         technologies: ['React', 'TypeScript', 'Redux', 'Next.js', 'Vite'],
         timeline: '2-8 недель',
@@ -49,7 +49,7 @@ const Services = () => {
     {
       id: 2,
       title: 'Верстка сайтов',
-      price: 300,
+      price: 30000,
       description: 'Качественная адаптивная верстка по макетам с соблюдением стандартов и кроссбраузерности.',
       category: 'frontend',
       deliverables: [
@@ -65,7 +65,7 @@ const Services = () => {
         { type: 'Адаптивный дизайн', rate: '$500/страница' },
         { type: 'Поддержка', rate: '$40/час' }
       ],
-      badge: 'Pixel Perfect',
+      badge: 'PIXEL PERFECT',
       details: {
         technologies: ['HTML5', 'CSS3', 'JavaScript', 'SASS/SCSS', 'Bootstrap'],
         timeline: '1-4 недель',
@@ -88,7 +88,7 @@ const Services = () => {
     {
       id: 3,
       title: 'UI/UX дизайн',
-      price: 750,
+      price: 75000,
       description: 'Создание интуитивных и эстетичных интерфейсов с продуманным пользовательским опытом.',
       category: 'design',
       deliverables: [
@@ -103,7 +103,7 @@ const Services = () => {
         { type: 'Прототипы', rate: '$1000' },
         { type: 'Дизайн интерфейса', rate: '$700' }
       ],
-      badge: 'UX Certified',
+      badge: 'UX CERTIFIED',
       details: {
         technologies: ['Figma', 'Adobe XD', 'Sketch', 'InVision', 'Principle'],
         timeline: '3-6 недель',
@@ -126,7 +126,7 @@ const Services = () => {
     {
       id: 4,
       title: 'Backend разработка (Python/Django)',
-      price: 5500,
+      price: 550000,
       description: 'Разработка надежных бэкенд-систем на Python/Django с REST API и оптимизированной базой данных.',
       category: 'backend',
       deliverables: [
@@ -142,7 +142,7 @@ const Services = () => {
         { type: 'Senior Developer', rate: '$45/час' },
         { type: 'Фиксированный проект', rate: '$3000 – $8000' }
       ],
-      badge: 'Python/Django',
+      badge: 'PYTHON/DJANGO',
       details: {
         technologies: ['Python', 'Django', 'Django REST', 'PostgreSQL', 'Redis'],
         timeline: '4-12 недель',
@@ -165,7 +165,7 @@ const Services = () => {
     {
       id: 5,
       title: 'API разработка',
-      price: 4500,
+      price: 450000,
       description: 'Проектирование и разработка RESTful API с документацией, тестированием и безопасностью.',
       category: 'backend',
       deliverables: [
@@ -180,7 +180,7 @@ const Services = () => {
         { type: 'Оптимизация БД', rate: '$35/час' },
         { type: 'Senior Developer', rate: '$50/час' }
       ],
-      badge: 'API Specialist',
+      badge: 'API SPECIALIST',
       details: {
         technologies: ['REST', 'GraphQL', 'Swagger', 'JWT', 'OAuth2'],
         timeline: '2-8 недель',
@@ -203,7 +203,7 @@ const Services = () => {
     {
       id: 6,
       title: 'Администрирование БД',
-      price: 1000,
+      price: 100000,
       description: 'Профессиональное администрирование и оптимизация баз данных для высоконагруженных проектов.',
       category: 'backend',
       deliverables: [
@@ -216,7 +216,7 @@ const Services = () => {
       pricing: [
         { type: 'Абонентское обслуживание', rate: '$500 – $1500/мес' }
       ],
-      badge: 'DBA Expert',
+      badge: 'DBA EXPERT',
       details: {
         technologies: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Elasticsearch'],
         timeline: 'Постоянная поддержка',
@@ -239,7 +239,7 @@ const Services = () => {
     {
       id: 7,
       title: 'Full-stack разработка',
-      price: 8500,
+      price: 850000,
       description: 'Комплексная разработка от фронтенда до бэкенда с полным циклом проектирования и реализации.',
       category: 'fullstack',
       deliverables: [
@@ -253,7 +253,7 @@ const Services = () => {
         { type: 'Команда разработки', rate: 'Индивидуальный расчет' },
         { type: 'Технический аудит', rate: '$250' }
       ],
-      badge: 'Full Stack',
+      badge: 'FULL STACK',
       details: {
         technologies: ['React', 'Node.js', 'Python', 'Docker', 'AWS'],
         timeline: '8-24 недели',
@@ -276,7 +276,7 @@ const Services = () => {
     {
       id: 8,
       title: 'Техническая консультация',
-      price: 250,
+      price: 25000,
       description: 'Экспертная консультация по архитектуре, технологическому стеку и оптимизации проектов.',
       category: 'consulting',
       deliverables: [
@@ -290,7 +290,7 @@ const Services = () => {
         { type: 'Консультация', rate: '$40/час' },
         { type: 'Технический аудит', rate: '$250' }
       ],
-      badge: 'Tech Advisor',
+      badge: 'TECH ADVISOR',
       details: {
         technologies: ['Архитектура', 'Best Practices', 'Code Review', 'DevOps'],
         timeline: '1-2 дня',
@@ -322,163 +322,179 @@ const Services = () => {
     setSelectedService(null);
   };
 
+  // Форматирование цены в шапке карточки (75000 → "$75K")
+  const formatMainPrice = (price) => {
+    if (price >= 1000000) {
+      return `$${(price / 1000000).toFixed(1)}M`;
+    }
+    if (price >= 1000) {
+      return `$${Math.round(price / 1000)}K`;
+    }
+    return `$${price}`;
+  };
+
   return (
     <section className="services-section">
-      <div className="container">
-        <div className="services-header">
-          <div>
-            <h2 className="section-title">Профессиональные услуги разработки</h2>
-            <p className="services-subtitle">
-              Полный цикл разработки: от UI/UX дизайна до высоконагруженных бэкенд-систем.
-              Гибкие модели сотрудничества и гарантия качества.
-            </p>
-          </div>
-          <div className="services-highlight">
-            <span className="services-highlight__tag">Скидка 10% на первый проект</span>
-            <p>
-              При заказе от 2 услуг — специальные условия и приоритетная поддержка.
-            </p>
-          </div>
+      <div className="services-header">
+        <div>
+          <h2 className="section-title">Профессиональные услуги разработки</h2>
+          <p className="services-subtitle">
+            Полный цикл разработки: от UI/UX дизайна до высоконагруженных бэкенд-систем. 
+            Гибкие модели сотрудничества и гарантия качества.
+          </p>
         </div>
-
-        <div className="services-grid">
-          {services.map((service) => (
-            <article key={service.id} className="service-card" data-category={service.category}>
-              <div className="service-card__badge">{service.badge}</div>
-              
-              <header className="service-card__header">
-                <h3>{service.title}</h3>
-              </header>
-              
-              <div className="service-card__price-main">
-                от ${service.price.toLocaleString('en-US')}
-              </div>
-              
-              <p className="service-card__description">{service.description}</p>
-              
-              <div className="service-card__deliverables">
-                <h4>Что входит:</h4>
-                <ul className="service-card__list">
-                  {service.deliverables.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* ⚠️ Блок с ценами ОСТАЛСЯ, но его содержимое УДАЛЕНО */}
-              <div className="service-card__pricing">
-                {/* Содержимое удалено, но сам блок и его стили сохранены */}
-              </div>
-
-              <div className="service-card__actions">
-                <button 
-                  type="button" 
-                  className="btn service-card__action" 
-                  onClick={() => addToCart(service)}
-                >
-                  Заказать консультацию
-                </button>
-                <button 
-                  type="button" 
-                  className="btn-outline service-card__details"
-                  onClick={() => openDetails(service)}
-                >
-                  Подробнее
-                </button>
-              </div>
-            </article>
-          ))}
+        <div className="services-highlight">
+          <span className="services-highlight__tag">Скидка 10% на первый проект</span>
+          <p>
+            При заказе от 2 услуг — специальные условия и приоритетная поддержка.
+          </p>
         </div>
+      </div>
 
-        {/* Modal for Service Details */}
-        {isModalOpen && selectedService && (
-          <div className="modal-overlay" onClick={closeDetails}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2 className="modal-title">{selectedService.title}</h2>
-                <button className="modal-close" onClick={closeDetails}>✕</button>
+      <div className="services-grid">
+        {services.map((service) => (
+          <article key={service.id} className="service-card">
+            <div className="service-card__badge">{service.badge}</div>
+            
+            <header className="service-card__header">
+              <h3>{service.title}</h3>
+            </header>
+            
+            <div className="service-card__price-main">
+              от {formatMainPrice(service.price)}
+            </div>
+            
+            <p className="service-card__description">{service.description}</p>
+            
+            <div className="service-card__deliverables">
+              <h4>ЧТО ВХОДИТ:</h4>
+              <ul className="service-card__list">
+                {service.deliverables.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="service-card__pricing">
+              <h4>СТОИМОСТЬ:</h4>
+              <div className="pricing-list">
+                {service.pricing.map((item, index) => (
+                  <div key={index} className="pricing-item">
+                    <span className="pricing-label">{item.type}</span>
+                    <span className="pricing-value">{item.rate}</span>
+                  </div>
+                ))}
               </div>
-              
-              <div className="modal-body">
-                <div className="service-details">
-                  <div className="details-section">
-                    <h3>Описание услуги</h3>
-                    <p>{selectedService.description}</p>
-                  </div>
+            </div>
 
-                  <div className="details-grid">
-                    <div className="details-column">
-                      <div className="details-section">
-                        <h3>🛠 Технологии</h3>
-                        <div className="tech-tags">
-                          {selectedService.details.technologies.map((tech, index) => (
-                            <span key={index} className="tech-tag">{tech}</span>
-                          ))}
-                        </div>
-                      </div>
+            <div className="service-card__actions">
+              <button 
+                type="button" 
+                className="btn service-card__action" 
+                onClick={() => addToCart(service)}
+              >
+                Заказать консультацию
+              </button>
+              <button 
+                type="button" 
+                className="btn-outline service-card__details"
+                onClick={() => openDetails(service)}
+              >
+                Подробнее
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
 
-                      <div className="details-section">
-                        <h3>⏱ Сроки выполнения</h3>
-                        <p className="timeline">{selectedService.details.timeline}</p>
+      {/* Modal for Service Details */}
+      {isModalOpen && selectedService && (
+        <div className="modal-overlay" onClick={closeDetails}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">{selectedService.title}</h2>
+              <button className="modal-close" onClick={closeDetails}>✕</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="service-details">
+                <div className="details-section">
+                  <h3>Описание услуги</h3>
+                  <p>{selectedService.description}</p>
+                </div>
+
+                <div className="details-grid">
+                  <div className="details-column">
+                    <div className="details-section">
+                      <h3>🛠 Технологии</h3>
+                      <div className="tech-tags">
+                        {selectedService.details.technologies.map((tech, index) => (
+                          <span key={index} className="tech-tag">{tech}</span>
+                        ))}
                       </div>
                     </div>
 
-                    <div className="details-column">
-                      <div className="details-section">
-                        <h3>✅ Основные возможности</h3>
-                        <ul className="features-list">
-                          {selectedService.details.features.map((feature, index) => (
-                            <li key={index}>{feature}</li>
-                          ))}
-                        </ul>
-                      </div>
+                    <div className="details-section">
+                      <h3>⏱ Сроки выполнения</h3>
+                      <p className="timeline">{selectedService.details.timeline}</p>
                     </div>
                   </div>
 
-                  <div className="details-section">
-                    <h3>🎯 Преимущества</h3>
-                    <div className="benefits-grid">
-                      {selectedService.details.benefits.map((benefit, index) => (
-                        <div key={index} className="benefit-item">
-                          <span className="benefit-icon">✓</span>
-                          <span>{benefit}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="details-section">
-                    <h3>💰 Детализация стоимости</h3>
-                    <div className="detailed-pricing">
-                      {selectedService.pricing.map((item, index) => (
-                        <div key={index} className="pricing-detail">
-                          <span className="pricing-type">{item.type}</span>
-                          <span className="pricing-rate">{item.rate}</span>
-                        </div>
-                      ))}
+                  <div className="details-column">
+                    <div className="details-section">
+                      <h3>✅ Основные возможности</h3>
+                      <ul className="features-list">
+                        {selectedService.details.features.map((feature, index) => (
+                          <li key={index}>{feature}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="modal-footer">
-                <button 
-                  className="btn btn--large modal-order-btn"
-                  onClick={() => {
-                    addToCart(selectedService);
-                    closeDetails();
-                  }}
-                >
-                  Заказать услугу
-                </button>
-                <button className="btn-outline" onClick={closeDetails}>
-                  Закрыть
-                </button>
+                <div className="details-section">
+                  <h3>🎯 Преимущества</h3>
+                  <div className="benefits-grid">
+                    {selectedService.details.benefits.map((benefit, index) => (
+                      <div key={index} className="benefit-item">
+                        <span className="benefit-icon">✓</span>
+                        <span>{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="details-section">
+                  <h3>💰 Детализация стоимости</h3>
+                  <div className="detailed-pricing">
+                    {selectedService.pricing.map((item, index) => (
+                      <div key={index} className="pricing-detail">
+                        <span className="pricing-type">{item.type}</span>
+                        <span className="pricing-rate">{item.rate}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
+
+            <div className="modal-footer">
+              <button 
+                className="btn btn--large modal-order-btn"
+                onClick={() => {
+                  addToCart(selectedService);
+                  closeDetails();
+                }}
+              >
+                Заказать услугу
+              </button>
+              <button className="btn-outline" onClick={closeDetails}>
+                Закрыть
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 };

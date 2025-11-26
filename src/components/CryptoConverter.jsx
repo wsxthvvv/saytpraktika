@@ -198,7 +198,7 @@ const CryptoConverter = () => {
             </div>
           </div>
           <p className="rates-panel__note">
-            Данные обновляются каждую минуту
+            Данные обновлются каждую минуту
           </p>
         </div>
       </div>

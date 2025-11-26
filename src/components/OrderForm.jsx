@@ -21,52 +21,56 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const mapRef = useRef(null);
   const ymapsRef = useRef(null);
+  const placemarkRef = useRef(null);
 
   // Подключаем Яндекс.Карты
   useEffect(() => {
-    if (window.ymaps) {
-      initMap();
-    } else {
-      const script = document.createElement('script');
-      script.src = `https://api-maps.yandex.ru/2.1/?apikey=17e85236-38e0-4f4a-9a44-6f26c8d2684e&lang=ru_RU`;
-      script.async = true;
-      script.onload = () => {
-        window.ymaps.ready(() => {
-          ymapsRef.current = window.ymaps;
-          initMap();
-        });
-      };
-      document.head.appendChild(script);
-      return () => {
-        document.head.removeChild(script);
-      };
+    if (window.ymaps && window.ymaps.ready) {
+      window.ymaps.ready(() => {
+        ymapsRef.current = window.ymaps;
+        initMap();
+      });
+      return;
     }
+
+    const script = document.createElement('script');
+    script.src = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU';
+    script.async = true;
+    script.onload = () => {
+      window.ymaps.ready(() => {
+        ymapsRef.current = window.ymaps;
+        initMap();
+      });
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
   }, []);
 
   const initMap = () => {
-    if (!ymapsRef.current || mapRef.current) return;
+    if (!ymapsRef.current || mapRef.current?.instance) return;
 
     const ymaps = ymapsRef.current;
     const myMap = new ymaps.Map(mapRef.current, {
-      center: [55.7512, 37.6184], // Москва
+      center: [55.7512, 37.6184],
       zoom: 10,
-      controls: []
+      controls: ['zoomControl']
     });
 
     const myPlacemark = new ymaps.Placemark(myMap.getCenter(), {}, {
       draggable: true,
-      iconLayout: 'default#image',
-      iconImageHref: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"%3E%3Ccircle cx="12" cy="10" r="8" fill="%23e10600"/%3E%3C/svg%3E',
-      iconImageSize: [24, 24],
-      iconImageOffset: [-12, -24]
+      preset: 'islands#redDotIcon'
     });
 
     myMap.geoObjects.add(myPlacemark);
+    placemarkRef.current = myPlacemark;
 
-    const updateAddress = async (coords) => {
+    const updateAddressFromCoords = async (coords) => {
       try {
-        const res = await ymaps.geocode(coords);
-        const address = res.geoObjects.get(0)?.getAddressLine() || `Координаты: ${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}`;
+        const res = await ymaps.geocode(coords, { results: 1 });
+        const address = res.geoObjects?.get(0)?.getAddressLine() || `Координаты: ${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}`;
         setFormData(prev => ({ ...prev, address }));
         myPlacemark.geometry.setCoordinates(coords);
       } catch (err) {
@@ -76,15 +80,46 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
 
     myMap.events.add('click', (e) => {
       const coords = e.get('coords');
-      updateAddress(coords);
+      updateAddressFromCoords(coords);
     });
 
     myPlacemark.events.add('dragend', () => {
       const coords = myPlacemark.geometry.getCoordinates();
-      updateAddress(coords);
+      updateAddressFromCoords(coords);
     });
 
     mapRef.current.instance = myMap;
+  };
+
+  // Геокодирование по нажатию Enter
+  const handleAddressKeyDown = async (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // предотвращает отправку формы
+      const address = formData.address.trim();
+      if (!address || !ymapsRef.current || !mapRef.current?.instance) return;
+
+      try {
+        const ymaps = ymapsRef.current;
+        const res = await ymaps.geocode(address, { results: 1 });
+        const geoObject = res.geoObjects.get(0);
+        if (geoObject) {
+          const coords = geoObject.geometry.getCoordinates();
+          const canonicalAddress = geoObject.getAddressLine();
+
+          const map = mapRef.current.instance;
+          const placemark = placemarkRef.current;
+
+          map.setCenter(coords, 15);
+          placemark.geometry.setCoordinates(coords);
+          setFormData(prev => ({ ...prev, address: canonicalAddress }));
+        } else {
+          alert('Адрес не найден. Попробуйте уточнить.');
+        }
+      } catch (err) {
+        console.error('Ошибка поиска адреса:', err);
+        alert('Не удалось найти адрес. Проверьте написание.');
+      }
+    }
   };
 
   const handleChange = (e) => {
@@ -225,8 +260,9 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
+                onKeyDown={handleAddressKeyDown}
                 required
-                placeholder="г. Москва, ул. Тверская, д. 1"
+                placeholder="Введите адрес и нажмите Enter"
               />
             </div>
             <div className="order-form__map-container">
