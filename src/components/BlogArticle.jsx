@@ -1,12 +1,9 @@
 // src/pages/BlogArticle.jsx
 import { useParams, Link } from 'react-router-dom';
-import { blogPosts } from '../data/blogPosts'; // ✅ Импортируем полные статьи
+import { blogPosts } from '../data/blogPosts';
 
 const BlogArticle = () => {
   const { id } = useParams();
-
-  // ✅ УБРАТЬ локальный массив blogPosts — он перекрывает импорт!
-
   const post = blogPosts.find(p => p.id === parseInt(id));
 
   if (!post) {
@@ -21,7 +18,6 @@ const BlogArticle = () => {
     );
   }
 
-  // Преобразуем категорию для отображения (если нужно)
   const getCategoryName = (category) => {
     const map = {
       'Майнинг': 'Майнинг',
@@ -40,7 +36,6 @@ const BlogArticle = () => {
           <span> / </span>
           <span>{post.title}</span>
         </div>
-
         <article className="blog-article">
           <header className="blog-article-header">
             <div className="blog-article-meta">
@@ -53,20 +48,17 @@ const BlogArticle = () => {
             </div>
             <h1 className="blog-article-title">{post.title}</h1>
           </header>
-
           <div className="blog-article-image">
             <img
-              src={post.image.trim()} // ✅ Убираем лишние пробелы в URL
+              src={post.image.trim()}
               alt={post.title}
               onError={(e) => e.target.style.display = 'none'}
             />
           </div>
-
           <div 
             className="blog-article-content"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
-
           <div className="blog-article-footer">
             <Link to="/blog" className="btn-outline">
               ← Назад к статьям

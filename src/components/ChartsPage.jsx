@@ -1,3 +1,4 @@
+// src/components/ChartsPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,7 +11,6 @@ const PriceChart = ({ coinId, symbol }) => {
   useEffect(() => {
     const fetchHistoricalData = async () => {
       try {
-        // Запрос 24-часовых данных (96 точек)
         const res = await fetch(
           `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=1&interval=hourly`
         );
@@ -31,7 +31,6 @@ const PriceChart = ({ coinId, symbol }) => {
   // Рисуем график на canvas
   useEffect(() => {
     if (loading || data.length === 0 || !canvasRef.current) return;
-
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const { width, height } = canvas;
@@ -40,7 +39,7 @@ const PriceChart = ({ coinId, symbol }) => {
     ctx.clearRect(0, 0, width, height);
 
     // Нормализация данных
-    const prices = data.map(d => d[1]); // d[0] = timestamp, d[1] = цена
+    const prices = data.map(d => d[1]);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
     const range = max - min || 1;
@@ -51,14 +50,12 @@ const PriceChart = ({ coinId, symbol }) => {
     // Рисуем линию
     ctx.beginPath();
     ctx.moveTo(0, scaleY(prices[0]));
-
     const step = width / (prices.length - 1);
     for (let i = 1; i < prices.length; i++) {
       const x = i * step;
       const y = scaleY(prices[i]);
       ctx.lineTo(x, y);
     }
-
     ctx.strokeStyle = '#dc2626';
     ctx.lineWidth = 2;
     ctx.stroke();
@@ -76,18 +73,15 @@ const ChartsPage = () => {
   const [coins, setCoins] = useState([]);
   const [loadingPrices, setLoadingPrices] = useState(true);
   const navigate = useNavigate();
-
   const coinIds = ['bitcoin', 'ethereum', 'binancecoin', 'solana', 'dogecoin'];
 
   useEffect(() => {
     const fetchCoinData = async () => {
       try {
-        // ⚠️ УБРАЛ ЛИШНИЙ ПРОБЕЛ В URL!
         const res = await fetch(
           `https://api.coingecko.com/api/v3/simple/price?ids=${coinIds.join(',')}&vs_currencies=usd&include_24hr_change=true`
         );
         const data = await res.json();
-
         const formatted = coinIds.map(id => {
           const symbol = {
             bitcoin: 'BTC',
@@ -96,10 +90,8 @@ const ChartsPage = () => {
             solana: 'SOL',
             dogecoin: 'DOGE'
           }[id];
-
           const price = data[id].usd;
           const change = data[id].usd_24h_change;
-
           return {
             id,
             symbol,
@@ -108,7 +100,6 @@ const ChartsPage = () => {
             satoshi: id === 'bitcoin' ? (100_000_000 / price).toFixed(2) : null
           };
         });
-
         setCoins(formatted);
         setLoadingPrices(false);
       } catch (err) {
@@ -120,7 +111,7 @@ const ChartsPage = () => {
     fetchCoinData();
     const interval = setInterval(fetchCoinData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, []); // ✅ coinIds вынесены в константу внутри useEffect — зависимость не нужна
 
   if (loadingPrices) {
     return (
@@ -138,7 +129,6 @@ const ChartsPage = () => {
           Назад
         </button>
       </div>
-
       <div className="charts-container">
         {/* Левая часть — реальные графики */}
         <div className="charts-left">
@@ -149,7 +139,6 @@ const ChartsPage = () => {
             </div>
           ))}
         </div>
-
         {/* Правая часть — курсы */}
         <div className="charts-right">
           <div className="price-card">
@@ -167,7 +156,6 @@ const ChartsPage = () => {
                 </div>
               </div>
             ))}
-
             <div className="price-item satoshi-item">
               <div>
                 <strong>SATS</strong>

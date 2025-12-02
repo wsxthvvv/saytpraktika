@@ -1,3 +1,4 @@
+// src/pages/MinerDetail.jsx
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
@@ -328,7 +329,6 @@ const MinerDetail = () => {
         <span> / </span>
         <span>{miner.title}</span>
       </div>
-
       <div className="miner-detail-container">
         {/* Левая колонка */}
         <div className="miner-detail-left-column">
@@ -348,7 +348,6 @@ const MinerDetail = () => {
               </div>
             )}
           </div>
-
           {/* Категории и теги с отступом */}
           <div className="miner-detail-categories-wrapper">
             <div className="miner-detail-categories-centered">
@@ -361,7 +360,6 @@ const MinerDetail = () => {
             </div>
           </div>
         </div>
-
         {/* Правая колонка */}
         <div className="miner-detail-right-column">
           {/* Отступ между бейджем и заголовком */}
@@ -397,7 +395,6 @@ const MinerDetail = () => {
               Добавить в корзину
             </button>
           </div>
-
           <div className="miner-detail-features-centered">
             <h4>Дополнительные преимущества:</h4>
             <div className="features-grid-centered">
@@ -425,7 +422,6 @@ const MinerDetail = () => {
           </div>
         </div>
       </div>
-
       {/* Табы */}
       <div className="miner-detail-tabs">
         <div className="tabs-header">
@@ -454,7 +450,6 @@ const MinerDetail = () => {
           {activeTab === 'warranty' && renderWarranty()}
         </div>
       </div>
-
       <div className="delivery-banner">
         <div className="delivery-banner__content">
           <span className="delivery-banner__icon">🚚</span>

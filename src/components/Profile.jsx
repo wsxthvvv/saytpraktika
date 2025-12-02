@@ -1,3 +1,4 @@
+// src/components/Profile.jsx
 import { useState, useEffect } from 'react';
 import Auth from './Auth';
 
@@ -15,15 +16,13 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
     };
 
     syncUser();
-
     window.addEventListener('storage', syncUser);
     window.addEventListener('userUpdated', syncUser);
-
     return () => {
       window.removeEventListener('storage', syncUser);
       window.removeEventListener('userUpdated', syncUser);
     };
-  }, [currentUser]);
+  }, []); // ✅ readUser вынесена внутрь — внешняя зависимость не нужна
 
   const handleLogin = (userData) => {
     localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -81,7 +80,6 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
                 </div>
               )}
             </div>
-
             <h3>История заказов:</h3>
             {user.orders?.length ? (
               <div className="profile-orders">
