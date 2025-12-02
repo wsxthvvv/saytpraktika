@@ -1,3 +1,4 @@
+// src/components/CryptoConverter.jsx
 import React, { useState, useEffect } from 'react';
 
 const CryptoConverter = () => {
@@ -97,10 +98,12 @@ const CryptoConverter = () => {
   return (
     <div className="crypto-converter-page">
       <div className="container">
-        <h2 className="section-title">Конвертер криптовалют</h2>
-        <p className="converter-subtitle">
-          Мгновенная конвертация между криптовалютами и фиатными валютами с актуальными курсами.
-        </p>
+        <div className="converter-header">
+          <h2 className="section-title">Конвертер криптовалют</h2>
+          <p className="converter-subtitle">
+            Мгновенная конвертация между криптовалютами и фиатными валютами с актуальными курсами.
+          </p>
+        </div>
 
         <div className="converter-card">
           <div className="converter-input-group">
@@ -198,7 +201,7 @@ const CryptoConverter = () => {
             </div>
           </div>
           <p className="rates-panel__note">
-            Данные обновлются каждую минуту
+            Данные обновляются каждую минуту
           </p>
         </div>
       </div>

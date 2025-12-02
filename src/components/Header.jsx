@@ -1,5 +1,4 @@
 import { NavLink, Link } from 'react-router-dom';
-import CryptoTicker from './CryptoTicker';
 
 const Header = ({ cartItemCount, currentUser }) => {
   return (
@@ -19,7 +18,6 @@ const Header = ({ cartItemCount, currentUser }) => {
         </ul>
       </nav>
       <div className="nav-right">
-        <CryptoTicker />
         <div className="nav-buttons">
           <Link to="/cart" className="btn-outline nav-cart">
             Корзина <span className="badge">{cartItemCount}</span>

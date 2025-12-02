@@ -2079,6 +2079,57 @@
 .tags-section strong {
   color: var(--text);
 }
+/* ===== MINER DETAIL PAGE ===== */
+.miner-detail-page {
+  padding-top: 90px;
+  position: relative;
+  z-index: 1;
+}
+
+.miner-image-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Убираем фиксированную высоту, если она была, и используем max-height */
+  max-height: 400px; /* Можно увеличить или уменьшить по желанию */
+  overflow: hidden;
+  margin-bottom: 1rem; /* Отступ снизу */
+}
+
+.miner-detail-image {
+  width: 100%;
+  height: auto; /* Высота автоматически подстраивается под ширину */
+  max-height: 400px; /* Ограничиваем максимальную высоту */
+  object-fit: contain; /* Вписываем изображение в контейнер без обрезки */
+  object-position: center; /* Центрируем изображение */
+  border-radius: 12px; /* Закругляем углы */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Тень для красоты */
+  transition: transform 0.3s ease; /* Анимация при наведении */
+}
+
+.miner-detail-image:hover {
+  transform: scale(1.02); /* Легкое увеличение при наведении */
+}
+
+/* Для случая, если изображения нет — плейсхолдер */
+.miner-image-placeholder-large {
+  width: 300px;
+  height: 300px;
+  background: var(--red-light);
+  border: 3px solid var(--red);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  color: var(--red);
+  transition: transform 0.3s ease;
+}
+
+.miner-image-placeholder-large:hover {
+  transform: scale(1.05);
+}
+
 /* ===== TABS ===== */
 .miner-detail-tabs {
   margin-top: 2rem;
@@ -3257,4 +3308,141 @@ body.modal-open {
 }
 .miner-detail-categories-wrapper {
   margin-top: 1rem;
+}
+/* ===== CRYPTO MARQUEE ===== */
+.crypto-marquee {
+  display: flex;
+  overflow: hidden;
+  background: var(--red-light);
+  border-top: 2px solid var(--red);
+  border-bottom: 2px solid var(--red);
+  padding: 0.75rem 0;
+  position: relative;
+  width: 100%;
+}
+.crypto-marquee::before,
+.crypto-marquee::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3rem;
+  z-index: 1;
+  pointer-events: none;
+}
+.crypto-marquee::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--bg) 0%, transparent 100%);
+}
+.crypto-marquee::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--bg) 0%, transparent 100%);
+}
+.crypto-marquee__content {
+  display: flex;
+  gap: 3rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-weight: 500;
+  animation: cryptoMarquee 30s linear infinite;
+  white-space: nowrap;
+}
+.crypto-marquee__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+.crypto-marquee__item strong {
+  color: var(--red);
+  font-weight: 600;
+}
+.crypto-marquee__change {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+.crypto-marquee__change.positive {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+.crypto-marquee__change.negative {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+@keyframes cryptoMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-33.333%);
+  }
+}
+@media (max-width: 768px) {
+  .crypto-marquee__content {
+    font-size: 0.8rem;
+    gap: 2rem;
+    animation-duration: 25s;
+  }
+  .crypto-marquee::before,
+  .crypto-marquee::after {
+    width: 2rem;
+  }
+}
+
+/* ===== Unified Section Headers ===== */
+.section-title,
+.converter-subtitle,
+.services-subtitle,
+.technologies-subtitle,
+.testimonials-subtitle,
+.faq-subtitle,
+.mining-subtitle,
+.blog-preview-subtitle,
+.blog-subtitle {
+  text-align: center;
+  margin: 0 auto;
+  max-width: 700px;
+  line-height: 1.4;
+}
+
+.section-title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+.section-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: var(--red);
+  margin: 0.75rem auto 0;
+  border-radius: 2px;
+}
+
+.converter-subtitle {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-family: 'Poppins', 'Inter', sans-serif;
+  margin-top: 0.5rem;
+  padding: 0 1rem;
+}
+
+/* Optional: add subtle hover effect to titles */
+.section-title:hover::after {
+  width: 70px;
+  transition: width 0.3s ease;
+}
+/* Центрирование заголовка и подзаголовка конвертера */
+.converter-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+.converter-header .section-title {
+  display: inline-block;
+  margin-bottom: 1rem;
 }

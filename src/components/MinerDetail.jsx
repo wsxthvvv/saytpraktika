@@ -1,5 +1,5 @@
-// src/pages/MinerDetail.jsx
-import React, { useState } from 'react';
+// src/components/MinerDetail.jsx
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 
@@ -8,7 +8,6 @@ const MinerDetail = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [activeTab, setActiveTab] = useState('description');
-
   const miners = [
     {
       id: 101,
@@ -203,9 +202,7 @@ const MinerDetail = () => {
       image: 'https://avatars.mds.yandex.net/i?id=7f6c4ba0598a23ae322b77ad1c4153ce_l-12820356-images-thumbs&n=13'
     }
   ];
-
   const miner = miners.find(m => m.id === parseInt(id));
-
   if (!miner) {
     return (
       <div className="miner-not-found">
@@ -214,7 +211,6 @@ const MinerDetail = () => {
       </div>
     );
   }
-
   const renderDescription = () => (
     <div className="miner-description-content">
       <h3>{miner.title} – Новое поколение майнинговой мощности</h3>
@@ -250,7 +246,6 @@ const MinerDetail = () => {
       </p>
     </div>
   );
-
   const renderAdditionalInfo = () => (
     <div className="miner-additional-info">
       <h4>Технические характеристики:</h4>
@@ -297,7 +292,6 @@ const MinerDetail = () => {
       </ul>
     </div>
   );
-
   const renderWarranty = () => (
     <div className="miner-warranty-info">
       <h4>Условия гарантии:</h4>
@@ -321,7 +315,6 @@ const MinerDetail = () => {
       </ul>
     </div>
   );
-
   return (
     <div className="miner-detail-page">
       <div className="miner-detail-breadcrumbs">
@@ -348,7 +341,6 @@ const MinerDetail = () => {
               </div>
             )}
           </div>
-          {/* Категории и теги с отступом */}
           <div className="miner-detail-categories-wrapper">
             <div className="miner-detail-categories-centered">
               <div className="categories-section">
@@ -362,12 +354,11 @@ const MinerDetail = () => {
         </div>
         {/* Правая колонка */}
         <div className="miner-detail-right-column">
-          {/* Отступ между бейджем и заголовком */}
           <div className="miner-detail-badge">{miner.badge}</div>
           <h1 className="miner-detail-title">{miner.title}</h1>
           <div className="miner-detail-price">
-            <span className="miner-price-current">${Math.round(miner.price).toLocaleString('en-US')}</span>
-            <span className="miner-price-original">${Math.round(miner.originalPrice).toLocaleString('en-US')}</span>
+            <span className="miner-price-current">${Math.round(miner.originalPrice).toLocaleString('en-US')}</span>
+            <span className="miner-price-original">${Math.round(miner.price).toLocaleString('en-US')}</span>
           </div>
           <div className="miner-detail-specs">
             <div className="miner-spec-item">
@@ -388,7 +379,10 @@ const MinerDetail = () => {
             <button 
               className="btn btn--large miner-detail-cart"
               onClick={() => {
-                addToCart(miner);
+                addToCart({
+                  ...miner,
+                  price: miner.originalPrice // ✅ ПРАВИЛЬНАЯ ЦЕНА ДЛЯ КОРЗИНЫ
+                });
                 navigate('/cart');
               }}
             >
@@ -450,7 +444,8 @@ const MinerDetail = () => {
           {activeTab === 'warranty' && renderWarranty()}
         </div>
       </div>
-      <div className="delivery-banner">
+      {/* УБРАЛИ БЕГУЩУЮ СТРОКУ И БАННЕР */}
+      {/* <div className="delivery-banner">
         <div className="delivery-banner__content">
           <span className="delivery-banner__icon">🚚</span>
           <div className="delivery-banner__text">
@@ -458,9 +453,8 @@ const MinerDetail = () => {
             <span>Быстрая доставка, таможенное оформление, гарантия качества</span>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
-
 export default MinerDetail;

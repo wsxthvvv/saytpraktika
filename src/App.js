@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import { CartProvider, useCart } from './contexts/CartContext';
 import Header from './components/Header';
@@ -13,7 +13,19 @@ import Blog from './components/Blog';
 import BlogArticle from './components/BlogArticle';
 import MiningEquipment from './components/MiningEquipment';
 import MinerDetail from './components/MinerDetail';
-import ChartsPage from './components/ChartsPage'; // 👈 Импорт страницы графиков
+import ChartsPage from './components/ChartsPage';
+import CryptoMarquee from './components/CryptoMarquee';
+
+// Компонент для прокрутки наверх при смене маршрута
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
 
 function AppContent() {
   const { itemCount } = useCart();
@@ -50,6 +62,8 @@ function AppContent() {
   return (
     <div className="App">
       <Header cartItemCount={itemCount} currentUser={user} />
+      <CryptoMarquee />
+      <ScrollToTop />
       <main className="main-content container">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -67,14 +81,10 @@ function AppContent() {
             }
           />
           <Route path="/cart" element={<Cart />} />
-
-          {/* Новые роуты */}
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogArticle />} />
           <Route path="/mining" element={<MiningEquipment />} />
           <Route path="/mining/:id" element={<MinerDetail />} />
-
-          {/* 👇 Маршрут для графиков — ДОБАВЛЕН */}
           <Route path="/charts" element={<ChartsPage />} />
         </Routes>
       </main>

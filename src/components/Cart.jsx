@@ -71,7 +71,8 @@ const Cart = () => {
                 </button>
               </div>
               <div className="cart-item-card__price">
-                ${(item.price * (item.quantity || 1)).toLocaleString('en-US')}
+                {/* ✅ ИСПРАВЛЕНО: цена без дробной части */}
+                ${Math.round(item.price * (item.quantity || 1)).toLocaleString('en-US')}
               </div>
               <button
                 onClick={() => removeFromCart(item.id)}
@@ -91,7 +92,8 @@ const Cart = () => {
         </div>
         <div className="cart-summary__line cart-summary__total">
           <span>Итого:</span>
-          <span className="cart-total-amount">${total.toLocaleString('en-US')}</span>
+          {/* ✅ ИСПРАВЛЕНО: итоговая сумма без дробной части */}
+          <span className="cart-total-amount">${Math.round(total).toLocaleString('en-US')}</span>
         </div>
         <button
           className="btn btn--large cart-checkout"
