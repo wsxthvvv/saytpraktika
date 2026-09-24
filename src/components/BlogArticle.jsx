@@ -50,9 +50,12 @@ const BlogArticle = () => {
           </header>
           <div className="blog-article-image">
             <img
-              src={post.image.trim()}
+              src={post.image?.trim() || '/images/blog/placeholder.svg'}
               alt={post.title}
-              onError={(e) => e.target.style.display = 'none'}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '/images/blog/placeholder.svg';
+              }}
             />
           </div>
           <div 

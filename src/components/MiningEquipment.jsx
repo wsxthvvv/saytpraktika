@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 const MiningEquipment = () => {
   const { addToCart } = useCart();
+  const [brokenImages, setBrokenImages] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
@@ -484,7 +485,7 @@ const MiningEquipment = () => {
             {/* УБРАЛИ БЕЙДЖ */}
             {/* <div className="miner-card__badge">{miner.badge}</div> */}
             <div className="miner-card__image">
-              {miner.image ? (
+              {miner.image && !brokenImages[miner.id] ? (
                 <img
                   src={miner.image}
                   alt={miner.title}
@@ -495,7 +496,7 @@ const MiningEquipment = () => {
                     borderRadius: '12px'
                   }}
                   onError={(e) => {
-                    e.target.style.display = 'none';
+                    setBrokenImages((prev) => ({ ...prev, [miner.id]: true }));
                   }}
                 />
               ) : (
@@ -532,7 +533,6 @@ const MiningEquipment = () => {
               </div>
             </div>
             <p className="miner-card__description">{miner.description}</p>
-            <div className="miner-card__tax">5%+9%+0</div>
             <div className="miner-card__actions">
               <Link to={`/mining/${miner.id}`} className="btn-outline miner-card__details-btn">
                 Подробнее

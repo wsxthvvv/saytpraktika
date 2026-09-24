@@ -14,7 +14,10 @@ import BlogArticle from './components/BlogArticle';
 import MiningEquipment from './components/MiningEquipment';
 import MinerDetail from './components/MinerDetail';
 import ChartsPage from './components/ChartsPage';
+import UploadsPage from './components/UploadsPage';
+import ProductsPage from './components/ProductsPage';
 import CryptoMarquee from './components/CryptoMarquee';
+import ContactWidget from './components/ContactWidget';
 
 // Компонент для прокрутки наверх при смене маршрута
 const ScrollToTop = () => {
@@ -68,6 +71,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/products" element={<ProductsPage />} />
           <Route path="/crypto" element={<CryptoConverter />} />
           <Route
             path="/profile"
@@ -86,8 +90,10 @@ function AppContent() {
           <Route path="/mining" element={<MiningEquipment />} />
           <Route path="/mining/:id" element={<MinerDetail />} />
           <Route path="/charts" element={<ChartsPage />} />
+          <Route path="/uploads" element={<UploadsPage />} />
         </Routes>
       </main>
+      <ContactWidget />
       <Footer />
     </div>
   );

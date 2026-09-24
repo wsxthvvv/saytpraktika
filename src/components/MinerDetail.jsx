@@ -374,43 +374,54 @@ const MinerDetail = () => {
               <span className="spec-value">Отправка в течение {miner.shipping}</span>
             </div>
           </div>
-          <div className="miner-detail-tax">5%+9%+0</div>
-          <div className="miner-detail-actions">
-            <button 
-              className="btn btn--large miner-detail-cart"
-              onClick={() => {
-                addToCart({
-                  ...miner,
-                  price: miner.originalPrice // ✅ ПРАВИЛЬНАЯ ЦЕНА ДЛЯ КОРЗИНЫ
-                });
-                navigate('/cart');
-              }}
-            >
-              Добавить в корзину
-            </button>
-          </div>
-          <div className="miner-detail-features-centered">
-            <h4>Дополнительные преимущества:</h4>
-            <div className="features-grid-centered">
-              <div className="feature-item-centered">
-                <span className="feature-icon">⭐</span>
-                <span>Премиальное качество</span>
+          {/* УБРАЛИ БЕГУЩУЮ СТРОКУ И БАННЕР */}
+          {/* <div className="delivery-banner">
+            <div className="delivery-banner__content">
+              <span className="delivery-banner__icon">🚚</span>
+              <div className="delivery-banner__text">
+                <strong>Доставка во все регионы Таможенного Союза из Минска</strong>
+                <span>Быстрая доставка, таможенное оформление, гарантия качества</span>
               </div>
-              <div className="feature-item-centered">
-                <span className="feature-icon">🔒</span>
-                <span>Безопасные платежи</span>
-              </div>
-              <div className="feature-item-centered">
-                <span className="feature-icon">✓</span>
-                <span>Гарантия удовлетворения</span>
-              </div>
-              <div className="feature-item-centered">
-                <span className="feature-icon">🌍</span>
-                <span>Доставка по всему миру</span>
-              </div>
-              <div className="feature-item-centered">
-                <span className="feature-icon">💰</span>
-                <span>Гарантия возврата денег</span>
+            </div>
+          </div> */}
+          <div className="miner-detail-info-gap">
+            <div className="miner-detail-actions">
+              <button 
+                className="btn btn--large miner-detail-cart"
+                onClick={() => {
+                  addToCart({
+                    ...miner,
+                    price: miner.originalPrice // ✅ ПРАВИЛЬНАЯ ЦЕНА ДЛЯ КОРЗИНЫ
+                  });
+                  navigate('/cart');
+                }}
+              >
+                Добавить в корзину
+              </button>
+            </div>
+            <div className="miner-detail-features-centered">
+              <h4>Дополнительные преимущества:</h4>
+              <div className="features-grid-centered">
+                <div className="feature-item-centered">
+                  <span className="feature-icon">⭐</span>
+                  <span>Премиальное качество</span>
+                </div>
+                <div className="feature-item-centered">
+                  <span className="feature-icon">🔒</span>
+                  <span>Безопасные платежи</span>
+                </div>
+                <div className="feature-item-centered">
+                  <span className="feature-icon">✓</span>
+                  <span>Гарантия удовлетворения</span>
+                </div>
+                <div className="feature-item-centered">
+                  <span className="feature-icon">🌍</span>
+                  <span>Доставка по всему миру</span>
+                </div>
+                <div className="feature-item-centered">
+                  <span className="feature-icon">💰</span>
+                  <span>Гарантия возврата денег</span>
+                </div>
               </div>
             </div>
           </div>
@@ -444,16 +455,6 @@ const MinerDetail = () => {
           {activeTab === 'warranty' && renderWarranty()}
         </div>
       </div>
-      {/* УБРАЛИ БЕГУЩУЮ СТРОКУ И БАННЕР */}
-      {/* <div className="delivery-banner">
-        <div className="delivery-banner__content">
-          <span className="delivery-banner__icon">🚚</span>
-          <div className="delivery-banner__text">
-            <strong>Доставка во все регионы Таможенного Союза из Минска</strong>
-            <span>Быстрая доставка, таможенное оформление, гарантия качества</span>
-          </div>
-        </div>
-      </div> */}
     </div>
   );
 };

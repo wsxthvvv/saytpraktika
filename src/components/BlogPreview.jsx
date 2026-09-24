@@ -29,7 +29,11 @@ const BlogPreview = () => {
                 <img
                   src={post.image}
                   alt={post.title}
-                  onError={(e) => e.target.style.display = 'none'}
+                  loading="lazy"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/images/blog/placeholder.svg';
+                  }}
                 />
               </div>
               <div className="blog-post-content">

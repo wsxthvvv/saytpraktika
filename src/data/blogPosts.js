@@ -1,4 +1,6 @@
 // src/data/blogPosts.js
+// Изображения: добавьте файлы 1.jpg, 2.jpg и т.д. в папку public/images/blog/
+// Или укажите свой URL в поле image
 
 export const blogPosts = [
   {
@@ -7,7 +9,7 @@ export const blogPosts = [
     excerpt: 'Новейшая модель от Bitmain обеспечивает хешрейт до 260 TH/s при энергопотреблении всего 3,5 кВт.',
     category: 'Майнинг',
     date: '2025-11-20',
-    image: 'https://images.unsplash.com/photo-1639762681051-1928d36dc851?auto=format&fit=crop&w=600&q=80',
+    image: 'https://avatars.mds.yandex.net/get-mpic/6219218/img_id533229483857631822.jpeg/orig',
     content: `
       <p>Компания Bitmain официально анонсировала Antminer S23 — новый флагман линейки SHA-256 майнеров. Устройство базируется на 5-нм чипе собственной разработки и демонстрирует значительный скачок в энергоэффективности.</p>
 
@@ -31,7 +33,7 @@ export const blogPosts = [
     excerpt: 'Сравниваем воздушное, жидкостное и иммерсионное охлаждение: плюсы, минусы и реальные кейсы.',
     category: 'Майнинг',
     date: '2025-11-15',
-    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80',
+    image: 'https://www.braintools.ru/images/2025/01/10/klyuchevye-trendy-zelenyh-data-centrov-9.jpg',
     content: `
       <p>Правильное охлаждение — ключ к стабильности и долговечности майнингового оборудования. Рассмотрим три основных подхода.</p>
 
@@ -58,7 +60,7 @@ export const blogPosts = [
     excerpt: 'Рост BTC продолжается на фоне запуска новых ETF и снижения инфляции в США.',
     category: 'Криптовалюты',
     date: '2025-11-22',
-    image: 'https://images.unsplash.com/photo-1621365510423-3c4671cc4174?auto=format&fit=crop&w=600&q=80',
+    image: 'https://avatars.mds.yandex.net/i?id=f762ae074d1a4730725812faae5045b162a00eb7-5139473-images-thumbs&n=13',
     content: `
       <p>Биткоин в ноябре 2025 года установил новый исторический максимум, преодолев отметку в $98 000. Рост спровоцирован несколькими ключевыми факторами:</p>
 
@@ -80,7 +82,7 @@ export const blogPosts = [
     excerpt: 'Новое обновление улучшает безопасность и снижает энергопотребление — поддержка ASIC остаётся.',
     category: 'Криптовалюты',
     date: '2025-11-10',
-    image: 'https://images.unsplash.com/photo-1638442041483-22e5d7a50a9e?auto=format&fit=crop&w=600&q=80',
+    image: 'https://avatars.mds.yandex.net/i?id=aed8db97a6355d84b9019660bce0f801_l-4766966-images-thumbs&n=13',
     content: `
       <p>Ethereum Classic недавно прошёл хардфорк «Phoenix 2.0», направленный на повышение устойчивости сети к атакам 51%.</p>
 
@@ -102,7 +104,7 @@ export const blogPosts = [
     excerpt: 'Новые хуки, улучшенная производительность и встроенная поддержка Web Workers.',
     category: 'Технологии',
     date: '2025-11-18',
-    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80',
+    image: 'https://avatars.mds.yandex.net/i?id=48f41f7718d41b39b32ffb8129c00106_l-5288942-images-thumbs&n=13',
     content: `
       <p>React 19 официально стабилен. Вот что важно для веб3-разработчиков:</p>
 
@@ -127,7 +129,7 @@ export const blogPosts = [
     excerpt: 'Тестирование нового майнера Antminer S21 с полным погружением в диэлектрическую жидкость.',
     category: 'Майнинг',
     date: '2025-11-01',
-    image: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=600&q=80',
+    image: 'https://cdn.digital-razor.ru/G4dxAcFpmirI45vFkgOapg01dRg=/fit-in/2360x1328/files/upload/iblock/027/027a0aa7ed416507ee0c850d7dc52c23.jpg',
     content: `
       <p>Мы протестировали Antminer S21, модифицированный под иммерсионное охлаждение с жидкостью BitCool BC-888.</p>
 
@@ -155,7 +157,7 @@ export const blogPosts = [
     excerpt: 'Добавили 12 моделей майнеров, расширенную гарантию и таможенное оформление «под ключ».',
     category: 'Обновления сайта',
     date: '2025-11-25',
-    image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=600&q=80',
+    image: 'https://avatars.mds.yandex.net/i?id=5364cabf23897a1ff2f44102f85fbf32_l-5331839-images-thumbs&n=13',
     content: `
       <p>С гордостью анонсируем запуск обновлённого раздела «Оборудование для майнинга» на нашем сайте!</p>
 
@@ -179,7 +181,7 @@ export const blogPosts = [
     excerpt: 'Технический разбор: WebSockets, Firebase и безопасная передача данных.',
     category: 'Технологии',
     date: '2025-11-05',
-    image: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=600&q=80',
+    image: 'https://avatars.mds.yandex.net/i?id=5441801604d1b889111fe171e7820c7eb9aaeed6-12421557-images-thumbs&n=13',
     content: `
       <p>Наша цель — дать клиенту возможность получать уведомления и управлять заказами прямо из личного кабинета.</p>
 

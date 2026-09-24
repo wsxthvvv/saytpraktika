@@ -39,21 +39,21 @@ const Footer = () => {
                 <span className="contact-icon">📞</span>
                 <div>
                   <div>Телефон:</div>
-                  <a href="tel:+375291234567">+375 (29) 123-45-67</a>
+                  <a href="tel:+79037644698">+7 903 764 46 98</a>
                 </div>
               </div>
               <div className="contact-item">
                 <span className="contact-icon">✉️</span>
                 <div>
                   <div>Email:</div>
-                  <a href="mailto:info@crypto-service.by">info@crypto-service.by</a>
+                  <a href="mailto:5421062@mail.ru">5421062@mail.ru</a>
                 </div>
               </div>
               <div className="contact-item">
                 <span className="contact-icon">📱</span>
                 <div>
                   <div>Telegram:</div>
-                  <a href="https://t.me/cryptoservice_support">@cryptoservice_support</a>
+                  <a href="https://t.me/Litwin4all">@Litwin4all</a>
                 </div>
               </div>
             </div>
