@@ -67,6 +67,7 @@ const Header = ({ cartItemCount, currentUser }) => {
             </ul>
           </li>
           <li><NavLink to="/blog">Блог</NavLink></li>
+          <li><NavLink to="/news">Новости</NavLink></li>
           <li><NavLink to="/uploads">Загрузки</NavLink></li>
         </ul>
       </nav>

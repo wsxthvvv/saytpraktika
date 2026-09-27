@@ -18,6 +18,7 @@ import UploadsPage from './components/UploadsPage';
 import ProductsPage from './components/ProductsPage';
 import CryptoMarquee from './components/CryptoMarquee';
 import ContactWidget from './components/ContactWidget';
+import RbcNewsFeed from './components/RbcNewsFeed';
 
 // Компонент для прокрутки наверх при смене маршрута
 const ScrollToTop = () => {
@@ -87,6 +88,7 @@ function AppContent() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogArticle />} />
+          <Route path="/news" element={<RbcNewsFeed />} />
           <Route path="/mining" element={<MiningEquipment />} />
           <Route path="/mining/:id" element={<MinerDetail />} />
           <Route path="/charts" element={<ChartsPage />} />

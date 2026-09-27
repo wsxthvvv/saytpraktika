@@ -5,6 +5,7 @@ import FAQ from '../components/FAQ';
 import Testimonials from '../components/Testimonials';
 import AnimatedCounter from '../components/AnimatedCounter';
 import BlogPreview from '../components/BlogPreview';
+import RbcNewsFeed from '../components/RbcNewsFeed';
 
 const Home = () => {
   return (
@@ -96,10 +97,10 @@ const Home = () => {
       <Technologies />
       <Testimonials />
 <FAQ />
+<RbcNewsFeed limit={3} preview />
 <BlogPreview /> {/* ← сюда */}
     </div>
   );
 };
 
 export default Home;
-
