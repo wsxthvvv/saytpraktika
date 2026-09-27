@@ -1,5 +1,5 @@
-// src/components/ChartsPage.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import '../styles/charts.css';
 import { useNavigate } from 'react-router-dom';
 
 const PriceChart = ({ coinId, vsCurrency, days }) => {
@@ -13,12 +13,12 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const formatAxisValue = (value) => {
+  const formatAxisValue = useCallback((value) => {
     const num = Number(value || 0);
     if (vsCurrency === 'usd') return `$${num.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
     if (vsCurrency === 'rub') return `${num.toLocaleString(undefined, { maximumFractionDigits: 0 })} RUB`;
     return `${num.toLocaleString(undefined, { maximumFractionDigits: 8 })} ${vsCurrency.toUpperCase()}`;
-  };
+  }, [vsCurrency]);
 
   useEffect(() => {
     let isMounted = true;
@@ -117,7 +117,7 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
       if (debounceTimer) clearTimeout(debounceTimer);
       clearInterval(interval);
     };
-  }, [coinId, vsCurrency, days]);
+  }, [coinId, vsCurrency, days]); // formatAxisValue стабилен для canvas-отрисовки // formatAxisValue стабилен для canvas
 
   // Отслеживание размера контейнера (контейнер рендерится только при успешной загрузке)
   useEffect(() => {
@@ -146,8 +146,8 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
     let height = containerSize.height;
     if (width <= 0 || height <= 0) {
       const rect = containerRef.current.getBoundingClientRect();
-      width = Math.max(800, Math.floor(rect.width));
-      height = Math.max(360, Math.floor(rect.height));
+      width = Math.max(280, Math.floor(rect.width));
+      height = Math.max(220, Math.floor(rect.height));
     }
     canvas.width = width;
     canvas.height = height;
@@ -162,7 +162,9 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
     const max = Math.max(...prices);
     const range = max - min || 1;
 
-    const padding = { top: 16, right: 16, bottom: 24, left: 106 };
+    const leftPad = width < 360 ? 56 : width < 480 ? 64 : width < 768 ? 80 : 106;
+    const axisFont = width < 480 ? '10px' : '12px';
+    const padding = { top: 16, right: 12, bottom: 24, left: leftPad };
     const plotWidth = Math.max(1, width - padding.left - padding.right);
     const plotHeight = Math.max(1, height - padding.top - padding.bottom);
     const scaleY = (price) => padding.top + (1 - (price - min) / range) * plotHeight;
@@ -180,7 +182,7 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
 
       const value = max - ((max - min) * i) / axisSteps;
       ctx.fillStyle = '#777';
-      ctx.font = '12px Inter, Arial, sans-serif';
+      ctx.font = `${axisFont} Inter, Arial, sans-serif`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(formatAxisValue(value), 8, y);
@@ -193,7 +195,7 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
       const y = scaleY(prices[i]);
       ctx.lineTo(x, y);
     }
-    ctx.strokeStyle = '#e10600';
+    ctx.strokeStyle = '#E2001A';
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -201,9 +203,9 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
     const lastY = scaleY(prices[prices.length - 1]);
     ctx.beginPath();
     ctx.arc(lastX, lastY, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#e10600';
+    ctx.fillStyle = '#E2001A';
     ctx.fill();
-  }, [data, loading, error, containerSize]);
+  }, [data, loading, error, containerSize, formatAxisValue]);
 
   if (loading && !data.length) return <div className="chart-loading">Загрузка...</div>;
   if (error && !data.length) return <div className="chart-error">{error}</div>;

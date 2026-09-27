@@ -1,0 +1,10 @@
+node_modules
+build
+.git
+.env
+.env.*
+!.env.example
+coverage
+npm-debug.log*
+README.md
+01 SERVICE_GUIDELINES.pdf

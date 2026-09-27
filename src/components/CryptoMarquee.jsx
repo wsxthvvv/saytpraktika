@@ -1,48 +1,9 @@
-// src/components/CryptoMarquee.jsx
-import React, { useState, useEffect } from 'react';
+import { useCryptoRates } from '../contexts/CryptoRatesContext';
 
 const CryptoMarquee = () => {
-  const [prices, setPrices] = useState({
-    btcUsd: null,
-    btcEth: null,
-    ethUsd: null,
-  });
-  const [change, setChange] = useState({
-    btcUsd: 0,
-    ethUsd: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { simple, loading } = useCryptoRates();
 
-  useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const res = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true'
-        );
-        const data = await res.json();
-
-        const btcUsd = data.bitcoin?.usd ?? null;
-        const btcUsdChange = data.bitcoin?.usd_24h_change ?? 0;
-        const ethUsd = data.ethereum?.usd ?? null;
-        const ethUsdChange = data.ethereum?.usd_24h_change ?? 0;
-
-        const btcEth = btcUsd && ethUsd ? (btcUsd / ethUsd).toFixed(4) : null;
-
-        setPrices({ btcUsd, btcEth, ethUsd });
-        setChange({ btcUsd: btcUsdChange, ethUsd: ethUsdChange });
-        setLoading(false);
-      } catch (err) {
-        console.error('Не удалось загрузить курсы:', err);
-        setLoading(false);
-      }
-    };
-
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (loading) {
+  if (loading && !simple) {
     return (
       <div className="crypto-marquee">
         <div className="crypto-marquee__content">
@@ -52,20 +13,26 @@ const CryptoMarquee = () => {
     );
   }
 
+  const btcUsd = simple?.bitcoin?.usd ?? null;
+  const ethUsd = simple?.ethereum?.usd ?? null;
+  const btcChange = simple?.bitcoin?.usd_24h_change ?? 0;
+  const ethChange = simple?.ethereum?.usd_24h_change ?? 0;
+  const btcEth = btcUsd && ethUsd ? (btcUsd / ethUsd).toFixed(4) : null;
+
   const items = [
     {
       label: 'BTC/USD',
-      value: prices.btcUsd ? `$${prices.btcUsd.toLocaleString()}` : '—',
-      change: change.btcUsd,
+      value: btcUsd ? `$${btcUsd.toLocaleString()}` : '—',
+      change: btcChange,
     },
     {
       label: 'ETH/USD',
-      value: prices.ethUsd ? `$${prices.ethUsd.toLocaleString()}` : '—',
-      change: change.ethUsd,
+      value: ethUsd ? `$${ethUsd.toLocaleString()}` : '—',
+      change: ethChange,
     },
     {
       label: 'BTC/ETH',
-      value: prices.btcEth || '—',
+      value: btcEth || '—',
       change: null,
     },
   ];

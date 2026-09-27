@@ -13,16 +13,16 @@ const Home = () => {
       <section className="hero">
         <AnimatedBackground />
         <div className="hero__content">
-          <span className="hero__eyebrow">WEB3 DIGITAL STUDIO</span>
+          <span className="hero__eyebrow">01 SERVICE · КОМПЬЮТЕРЫ И ОБСЛУЖИВАНИЕ</span>
           <h1
             className="hero__title glitch"
-            data-text="Создаем сайты и крипто-сервисы, которые выделяются"
+            data-text="Ремонт, сборка ПК, IT-сервис и разработка под ключ"
           >
-            Создаем сайты и крипто-сервисы, которые выделяются
+            Ремонт, сборка ПК, IT-сервис и разработка под ключ
           </h1>
           <p className="hero__subtitle">
-            От лендинга до сложной платформы с конвертацией криптовалют. Ваша команда разработки,
-            стратеги и дизайнеры — в одном месте.
+            От диагностики ноутбука до сайта с крипто-модулями — один партнёр, фирменное качество
+            и понятный сервис.
           </p>
           <div className="hero__cta">
             <Link to="/services" className="btn">
@@ -97,7 +97,7 @@ const Home = () => {
       <Technologies />
       <Testimonials />
 <FAQ />
-<RbcNewsFeed limit={3} preview />
+<RbcNewsFeed limit={3} preview lazyWhenPreview />
 <BlogPreview /> {/* ← сюда */}
     </div>
   );

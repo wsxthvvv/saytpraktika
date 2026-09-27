@@ -2,20 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { Link } from 'react-router-dom';
 
-const MiningEquipment = () => {
-  const { addToCart } = useCart();
-  const [brokenImages, setBrokenImages] = useState({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const [priceMin, setPriceMin] = useState('');
-  const [priceMax, setPriceMax] = useState('');
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState('');
-  const [selectedCoin, setSelectedCoin] = useState('');
-  const [hashrateMin, setHashrateMin] = useState('');
-  const [hashrateMax, setHashrateMax] = useState('');
-  const [powerMin, setPowerMin] = useState('');
-  const [powerMax, setPowerMax] = useState('');
-
-  const miners = [
+const MINERS_CATALOG = [
     {
       id: 101,
       title: 'Antminer U3S21EXPH',
@@ -208,7 +195,22 @@ const MiningEquipment = () => {
       warranty: '180 дней',
       image: 'https://avatars.mds.yandex.net/i?id=7f6c4ba0598a23ae322b77ad1c4153ce_l-12820356-images-thumbs&n=13'
     }
-  ];
+];
+
+const MiningEquipment = () => {
+  const { addToCart } = useCart();
+  const [brokenImages, setBrokenImages] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState('');
+  const [selectedCoin, setSelectedCoin] = useState('');
+  const [hashrateMin, setHashrateMin] = useState('');
+  const [hashrateMax, setHashrateMax] = useState('');
+  const [powerMin, setPowerMin] = useState('');
+  const [powerMax, setPowerMax] = useState('');
+
+  const miners = MINERS_CATALOG;
 
   const parseHashrate = (hashrateStr) => {
     const match = hashrateStr.match(/([\d.]+)\s*(Th|Gh|Mh)\/s/i);
@@ -228,12 +230,12 @@ const MiningEquipment = () => {
 
   const uniqueAlgorithms = useMemo(() => {
     return [...new Set(miners.map(m => m.algorithm))].sort();
-  }, []);
+  }, [miners]);
 
   const uniqueCoins = useMemo(() => {
     const allCoins = miners.flatMap(m => m.coins.split('/').map(c => c.trim()));
     return [...new Set(allCoins)].sort();
-  }, []);
+  }, [miners]);
 
   const filteredMiners = useMemo(() => {
     return miners.filter(miner => {
@@ -268,7 +270,7 @@ const MiningEquipment = () => {
       }
       return true;
     });
-  }, [searchQuery, priceMin, priceMax, selectedAlgorithm, selectedCoin, hashrateMin, hashrateMax, powerMin, powerMax]);
+  }, [miners, searchQuery, priceMin, priceMax, selectedAlgorithm, selectedCoin, hashrateMin, hashrateMax, powerMin, powerMax]);
 
   const resetFilters = () => {
     setSearchQuery('');

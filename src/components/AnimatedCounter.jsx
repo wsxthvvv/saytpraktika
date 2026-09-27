@@ -32,7 +32,6 @@ const AnimatedCounter = ({ value, suffix = '', duration = 2000 }) => {
     if (!isVisible) return;
 
     const numericValue = parseFloat(value.replace(/[^0-9.]/g, ''));
-    const hasSuffix = value.includes('+') || value.includes('x') || value.includes('/');
     const step = numericValue / (duration / 16);
     let current = 0;
 

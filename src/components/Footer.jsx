@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import BrandLogo from './BrandLogo';
 
 const Footer = () => {
   return (
@@ -7,14 +8,12 @@ const Footer = () => {
         <div className="footer-content">
           <div className="footer-section">
             <div className="footer-logo">
-              <span className="logo__mark">01</span>
-              <span className="logo__word">service</span>
+              <BrandLogo variant="footer" />
             </div>
             <p className="footer-description">
-              ООО "Рутрекер Технолоджи"
+              ООО «Рутрекер Технолоджи»
               <br />
-              Полный цикл крипто-услуг: разработка, майнинг, интеграции.
-              Ваш надежный партнер в цифровой экономике.
+              Компьютеры и обслуживание: ремонт, сборка, IT-сервис, разработка сайтов и крипто-интеграции.
             </p>
           </div>
 
@@ -49,13 +48,6 @@ const Footer = () => {
                   <a href="mailto:5421062@mail.ru">5421062@mail.ru</a>
                 </div>
               </div>
-              <div className="contact-item">
-                <span className="contact-icon">📱</span>
-                <div>
-                  <div>Telegram:</div>
-                  <a href="https://t.me/Litwin4all">@Litwin4all</a>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -81,7 +73,7 @@ const Footer = () => {
             <h4>Быстрые ссылки</h4>
             <ul className="footer-links">
               <li><Link to="/services">Услуги разработки</Link></li>
-              <li><Link to="/mining">Оборудование для майнинга</Link></li>
+              <li><Link to="/mining">Каталог оборудования</Link></li>
               <li><Link to="/crypto">Конвертер криптовалют</Link></li>
               <li><Link to="/blog">Наш блог</Link></li>
               <li><Link to="/profile">Личный кабинет</Link></li>
@@ -89,9 +81,15 @@ const Footer = () => {
           </div>
         </div>
 
+        <div className="footer-legal">
+          <Link to="/privacy">Политика конфиденциальности</Link>
+          <span className="footer-legal__sep" aria-hidden="true">·</span>
+          <Link to="/consent">Согласие на обработку ПДн</Link>
+        </div>
+
         <div className="footer-bottom">
           <div className="footer-copyright">
-            © 2024 ООО "Рутрекер Технолоджи". Все права защищены.
+            © 2026 ООО "Рутрекер Технолоджи". Все права защищены.
           </div>
           <div className="footer-payments">
             <span>Принимаем:</span>

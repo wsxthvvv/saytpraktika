@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { formatRussianPhone } from '../utils/phone';
+import PersonalDataConsentCheckbox from './PersonalDataConsentCheckbox';
+import { submitLead } from '../api/submitLead';
+import { setLeadNotice } from '../utils/leadNotice';
+import { loadYandexMaps } from '../utils/loadYandexMaps';
+import { persistSessionProfile } from '../utils/userAuth';
 
 const OrderForm = ({ onOrderSubmit, onCancel }) => {
   const { cart, total, clearCart } = useCart();
@@ -34,7 +39,10 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pdConsent, setPdConsent] = useState(false);
+  const [pdConsentError, setPdConsentError] = useState('');
   const [isLocating, setIsLocating] = useState(false);
+  const [mapNotice, setMapNotice] = useState('');
   const mapRef = useRef(null);
   const ymapsRef = useRef(null);
   const placemarkRef = useRef(null);
@@ -98,30 +106,23 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
     }
   };
 
-  // Подключаем Яндекс.Карты
   useEffect(() => {
-    if (window.ymaps && window.ymaps.ready) {
-      window.ymaps.ready(() => {
-        ymapsRef.current = window.ymaps;
+    let cancelled = false;
+    loadYandexMaps()
+      .then((ymaps) => {
+        if (cancelled) return;
+        ymapsRef.current = ymaps;
         initMap();
+      })
+      .catch((err) => {
+        console.error('Яндекс.Карты не загрузились:', err);
+        setMapNotice('Карта недоступна. Введите адрес вручную.');
       });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU';
-    script.async = true;
-    script.onload = () => {
-      window.ymaps.ready(() => {
-        ymapsRef.current = window.ymaps;
-        initMap();
-      });
-    };
-    document.head.appendChild(script);
-
     return () => {
-      document.head.removeChild(script);
+      cancelled = true;
     };
+    // initMap создаёт карту один раз при монтировании формы
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initMap = () => {
@@ -193,9 +194,10 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
   // Функция для определения местоположения
   const detectLocation = () => {
     if (!navigator.geolocation) {
-      alert('Геолокация не поддерживается вашим браузером');
+      setMapNotice('Геолокация не поддерживается вашим браузером.');
       return;
     }
+    setMapNotice('');
 
     setIsLocating(true);
 
@@ -246,7 +248,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
             if (placemark) {
               placemark.geometry.setCoordinates(coords);
             }
-            alert('Не удалось определить адрес по координатам, но местоположение отмечено на карте');
+            setMapNotice('Не удалось определить адрес по координатам, но точка отмечена на карте.');
           }
         } else {
           // Если карта еще не загружена, сохраняем координаты и адрес
@@ -290,9 +292,11 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
           case error.TIMEOUT:
             errorMessage = 'Превышено время ожидания запроса геолокации.';
             break;
+          default:
+            break;
         }
-        
-        alert(errorMessage);
+
+        setMapNotice(errorMessage);
       },
       {
         enableHighAccuracy: true,
@@ -324,11 +328,11 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
           placemark.geometry.setCoordinates(coords);
           setFormData(prev => ({ ...prev, address: canonicalAddress }));
         } else {
-          alert('Адрес не найден. Попробуйте уточнить.');
+          setMapNotice('Адрес не найден. Попробуйте уточнить.');
         }
       } catch (err) {
         console.error('Ошибка поиска адреса:', err);
-        alert('Не удалось найти адрес. Проверьте написание.');
+        setMapNotice('Не удалось найти адрес. Проверьте написание.');
       }
     }
   };
@@ -341,46 +345,75 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!pdConsent) {
+      setPdConsentError('Необходимо дать согласие на обработку персональных данных');
+      return;
+    }
+    setPdConsentError('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const contactName = [formData.lastName, formData.firstName, formData.patronymic].filter(Boolean).join(' ');
-      const order = {
-        id: Date.now(),
-        items: cart,
-        total,
-        contactName,
-        email: formData.email,
+    const contactName = [formData.lastName, formData.firstName, formData.patronymic].filter(Boolean).join(' ');
+    const order = {
+      id: Date.now(),
+      items: cart,
+      total,
+      contactName,
+      email: formData.email,
+      phone: formatRussianPhone(formData.phone),
+      address: formData.address,
+      deliveryDate: formData.deliveryDate,
+      deliveryTime: formData.deliveryTime,
+      comments: formData.comments,
+      status: 'Ожидание',
+      createdAt: new Date().toISOString(),
+    };
+
+    const itemsSummary = cart
+      .map((item) => `${item.name || item.title || 'Товар'} × ${item.quantity || 1}`)
+      .join('; ');
+
+    const leadResult = await submitLead({
+      type: 'order',
+      name: contactName,
+      phone: order.phone,
+      email: order.email,
+      address: order.address,
+      deliveryDate: order.deliveryDate,
+      deliveryTime: order.deliveryTime,
+      comments: order.comments,
+      total: order.total,
+      itemsSummary,
+    });
+
+    if (leadResult.delivered) {
+      setLeadNotice('Заказ оформлен. Менеджер получил уведомление и свяжется с вами.');
+    } else {
+      setLeadNotice(
+        'Заказ сохранён в личном кабинете — мы перезвоним. Уведомление в Telegram/MAX доставится после деплоя API. Телефон: +7 903 764 46 98, email: 5421062@mail.ru.'
+      );
+    }
+
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (user.email) {
+      user.orders = user.orders || [];
+      user.orders.push(order);
+      Object.assign(user, {
+        lastName: formData.lastName,
+        firstName: formData.firstName,
+        patronymic: formData.patronymic,
+        fullName: contactName,
         phone: formatRussianPhone(formData.phone),
         address: formData.address,
-        deliveryDate: formData.deliveryDate,
-        deliveryTime: formData.deliveryTime,
-        comments: formData.comments,
-        status: 'Ожидание',
-        createdAt: new Date().toISOString(),
-      };
+        email: formData.email
+      });
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      persistSessionProfile(user);
+      window.dispatchEvent(new Event('userUpdated'));
+    }
 
-      const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      if (user.email) {
-        user.orders = user.orders || [];
-        user.orders.push(order);
-        Object.assign(user, {
-          lastName: formData.lastName,
-          firstName: formData.firstName,
-          patronymic: formData.patronymic,
-          fullName: contactName,
-          phone: formatRussianPhone(formData.phone),
-          address: formData.address,
-          email: formData.email
-        });
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        window.dispatchEvent(new Event('userUpdated'));
-      }
-
-      clearCart();
-      setIsSubmitting(false);
-      onOrderSubmit?.(order);
-    }, 800);
+    clearCart();
+    setIsSubmitting(false);
+    onOrderSubmit?.(order);
   };
 
   const minDate = new Date().toISOString().split('T')[0];
@@ -519,6 +552,11 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
                 placeholder="Введите адрес и нажмите Enter или используйте кнопку определения местоположения"
                 autoComplete="street-address"
               />
+              {mapNotice && (
+                <p className="order-form__map-notice" role="status">
+                  {mapNotice}
+                </p>
+              )}
             </div>
             <div className="order-form__map-container">
               <label className="order-form__map-label">Выберите адрес на карте Москвы</label>
@@ -588,6 +626,16 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
             </div>
           </div>
         </div>
+
+        <PersonalDataConsentCheckbox
+          id="order-pd-consent"
+          checked={pdConsent}
+          onChange={(value) => {
+            setPdConsent(value);
+            if (value) setPdConsentError('');
+          }}
+          error={pdConsentError}
+        />
 
         <div className="order-form__actions">
           <button type="button" onClick={onCancel} className="btn-outline">

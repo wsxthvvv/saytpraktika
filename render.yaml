@@ -1,0 +1,22 @@
+# Render.com — Blueprint (опционально): New > Blueprint > подключить репозиторий
+services:
+  - type: web
+    name: 01service
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: CORS_ORIGINS
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: MAX_WEBHOOK_URL
+        sync: false
+      - key: MAX_API_TOKEN
+        sync: false

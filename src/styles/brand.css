@@ -1,0 +1,74 @@
+/* Логотип 01 SERVICE — брендбук */
+.brand-logo-link {
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.brand-logo__circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--red);
+  color: var(--brand-white);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.brand-logo__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.brand-logo__name {
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.22em;
+  color: var(--brand-black);
+  line-height: 1.1;
+}
+
+.brand-logo__tagline {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  line-height: 1.2;
+  max-width: 14rem;
+}
+
+.brand-logo--footer .brand-logo__circle {
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 0.8rem;
+}
+
+.brand-logo--footer .brand-logo__name {
+  font-size: 1rem;
+  letter-spacing: 0.18em;
+}
+
+@media (max-width: 480px) {
+  .brand-logo--header .brand-logo__tagline {
+    display: none;
+  }
+
+  .brand-logo--header .brand-logo__circle {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+}

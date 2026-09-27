@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
-import OrderForm from './OrderForm';
+
+const OrderForm = lazy(() => import('./OrderForm'));
 
 const Cart = () => {
   const { cart, removeFromCart, updateQuantity, total, clearCart } = useCart();
@@ -108,16 +109,18 @@ const Cart = () => {
       {showOrderForm && (
         <div className="order-form-overlay" onClick={() => setShowOrderForm(false)}>
           <div className="order-form-wrapper" onClick={(e) => e.stopPropagation()}>
-            <OrderForm
-              onOrderSubmit={(_order, updatedUser) => {
-                setShowOrderForm(false);
-                if (updatedUser) {
-                  localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-                }
-                navigate('/profile');
-              }}
-              onCancel={() => setShowOrderForm(false)}
-            />
+            <Suspense fallback={<p className="order-form__loading">Загружаем форму заказа…</p>}>
+              <OrderForm
+                onOrderSubmit={(_order, updatedUser) => {
+                  setShowOrderForm(false);
+                  if (updatedUser) {
+                    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                  }
+                  navigate('/profile');
+                }}
+                onCancel={() => setShowOrderForm(false)}
+              />
+            </Suspense>
           </div>
         </div>
       )}

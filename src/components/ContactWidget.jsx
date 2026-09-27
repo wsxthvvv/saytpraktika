@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import PersonalDataConsentCheckbox from './PersonalDataConsentCheckbox';
+import MessengerLinks from './MessengerLinks';
+import { submitLead } from '../api/submitLead';
 
 const ContactWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -7,6 +10,10 @@ const ContactWidget = () => {
   const [isSent, setIsSent] = useState(false);
   const [nameError, setNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [pdConsent, setPdConsent] = useState(false);
+  const [pdConsentError, setPdConsentError] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
   const widgetRef = useRef(null);
 
   const formatPhone = (value) => {
@@ -52,7 +59,7 @@ const ContactWidget = () => {
     };
   }, []);
 
-  const handleRequestCall = (event) => {
+  const handleRequestCall = async (event) => {
     event.preventDefault();
     const digits = phone.replace(/\D/g, '');
     let hasError = false;
@@ -71,12 +78,32 @@ const ContactWidget = () => {
       setPhoneError('');
     }
 
+    if (!pdConsent) {
+      setPdConsentError('Необходимо дать согласие на обработку персональных данных');
+      hasError = true;
+    } else {
+      setPdConsentError('');
+    }
+
     if (hasError) return;
 
+    setIsSending(true);
+    setSendResult(null);
+    const result = await submitLead({
+      type: 'callback',
+      name: name.trim(),
+      phone,
+    });
+    setIsSending(false);
+    setSendResult(result);
     setIsSent(true);
+    setPdConsent(false);
     setName('');
     setPhone('+7 ');
-    setTimeout(() => setIsSent(false), 1800);
+    setTimeout(() => {
+      setIsSent(false);
+      setSendResult(null);
+    }, 8000);
   };
 
   return (
@@ -89,8 +116,9 @@ const ContactWidget = () => {
           <div className="contact-widget__links">
             <div className="contact-widget__contact-item">+7 903 764 46 98</div>
             <div className="contact-widget__contact-item">5421062@mail.ru</div>
-            <div className="contact-widget__contact-item">Telegram: @Litwin4all</div>
           </div>
+
+          <MessengerLinks variant="stack" className="contact-widget__messengers" />
 
           <form className="contact-widget__form" onSubmit={handleRequestCall}>
             <input
@@ -113,11 +141,33 @@ const ContactWidget = () => {
               }}
             />
             {phoneError && <p className="contact-widget__error">{phoneError}</p>}
-            <button type="submit" className="btn contact-widget__cta">
-              Готовы обсудить ваши задачи
+            <PersonalDataConsentCheckbox
+              id="callback-pd-consent"
+              checked={pdConsent}
+              onChange={(value) => {
+                setPdConsent(value);
+                if (value) setPdConsentError('');
+              }}
+              error={pdConsentError}
+            />
+            <button type="submit" className="btn contact-widget__cta" disabled={isSending}>
+              {isSending ? 'Отправляем...' : 'Готовы обсудить ваши задачи'}
             </button>
           </form>
-          {isSent && <p className="contact-widget__success">Мы вам скоро позвоним.</p>}
+          {isSent && sendResult && (
+            <div className="contact-widget__success" role="status">
+              <p>
+                {sendResult.delivered
+                  ? 'Заявка отправлена менеджеру. Мы перезвоним в рабочее время.'
+                  : 'Заявка сохранена на сайте — мы перезвоним. Уведомление в Telegram/MAX доставится после деплоя API. Срочно: +7 903 764 46 98 или 5421062@mail.ru.'}
+              </p>
+              {!sendResult.delivered && sendResult.mailto && (
+                <a className="contact-widget__mailto" href={sendResult.mailto}>
+                  Дублировать заявку на email
+                </a>
+              )}
+            </div>
+          )}
         </div>
       )}
 

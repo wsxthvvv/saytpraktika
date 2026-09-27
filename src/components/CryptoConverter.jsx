@@ -1,14 +1,15 @@
-// src/components/CryptoConverter.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useCryptoRates } from '../contexts/CryptoRatesContext';
 
 const CryptoConverter = () => {
-  const [cryptoRates, setCryptoRates] = useState({});
+  const { simple, loading: ratesLoading } = useCryptoRates();
+  const cryptoRates = useMemo(() => simple || {}, [simple]);
   const [fiatRate, setFiatRate] = useState(90);
   const [fromAmount, setFromAmount] = useState(1);
   const [fromCurrency, setFromCurrency] = useState('USD');
   const [toCurrency, setToCurrency] = useState('BTC');
   const [result, setResult] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [fiatLoading, setFiatLoading] = useState(true);
 
   const currencies = [
     { code: 'USD', name: 'US Dollar', symbol: '$', type: 'fiat' },
@@ -16,18 +17,6 @@ const CryptoConverter = () => {
     { code: 'BTC', name: 'Bitcoin', symbol: '₿', type: 'crypto', id: 'bitcoin' },
     { code: 'ETH', name: 'Ethereum', symbol: 'Ξ', type: 'crypto', id: 'ethereum' },
   ];
-
-  const fetchCryptoRates = async () => {
-    try {
-      const res = await fetch(
-        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,rub'
-      );
-      const data = await res.json();
-      setCryptoRates(data);
-    } catch (err) {
-      console.error('Ошибка загрузки курсов криптовалют:', err);
-    }
-  };
 
   const fetchFiatRate = async () => {
     try {
@@ -42,16 +31,17 @@ const CryptoConverter = () => {
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await Promise.all([fetchCryptoRates(), fetchFiatRate()]);
-      setLoading(false);
+    const loadFiat = async () => {
+      setFiatLoading(true);
+      await fetchFiatRate();
+      setFiatLoading(false);
     };
-
-    loadData();
-    const interval = setInterval(loadData, 60000);
+    loadFiat();
+    const interval = setInterval(fetchFiatRate, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  const loading = ratesLoading || fiatLoading;
 
   const handleInputChange = (e) => {
     let value = e.target.value;

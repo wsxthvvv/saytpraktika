@@ -1,14 +1,18 @@
 // src/components/Profile.jsx
 import { useState, useEffect } from 'react';
 import Auth from './Auth';
+import { mergeSessionWithRecord, persistSessionProfile, toSessionUser } from '../utils/userAuth';
+import { consumeLeadNotice } from '../utils/leadNotice';
 
 const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
   const readUser = () => {
     const saved = localStorage.getItem('currentUser');
-    return saved ? JSON.parse(saved) : currentUser || null;
+    if (!saved) return currentUser || null;
+    return mergeSessionWithRecord(toSessionUser(JSON.parse(saved)));
   };
 
   const [user, setUser] = useState(readUser);
+  const [leadNotice] = useState(() => consumeLeadNotice());
 
   useEffect(() => {
     const syncUser = () => {
@@ -22,16 +26,19 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
       window.removeEventListener('storage', syncUser);
       window.removeEventListener('userUpdated', syncUser);
     };
-  }, []); // ✅ readUser вынесена внутрь — внешняя зависимость не нужна
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- readUser стабильна по смыслу
+  }, []);
 
   const handleLogin = (userData) => {
-    localStorage.setItem('currentUser', JSON.stringify(userData));
-    setUser(userData);
-    onLogin?.(userData);
+    const merged = mergeSessionWithRecord(userData);
+    localStorage.setItem('currentUser', JSON.stringify(merged));
+    setUser(merged);
+    onLogin?.(merged);
   };
 
   const handleRegister = (userData) => {
     localStorage.setItem('currentUser', JSON.stringify(userData));
+    persistSessionProfile(userData);
     setUser(userData);
     onRegister?.(userData);
   };
@@ -49,6 +56,11 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
   return (
     <div className="profile-section">
       <h2 className="section-title">Личный кабинет</h2>
+      {leadNotice && (
+        <p className="profile-lead-notice" role="status">
+          {leadNotice}
+        </p>
+      )}
       {!user ? (
         <Auth onLogin={handleLogin} onRegister={handleRegister} />
       ) : (
