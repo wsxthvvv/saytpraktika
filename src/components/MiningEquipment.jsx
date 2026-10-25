@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useCart } from '../contexts/CartContext';
+import Testimonials from './Testimonials';
 import { Link } from 'react-router-dom';
 
 const MINERS_CATALOG = [
@@ -285,6 +286,7 @@ const MiningEquipment = () => {
   };
 
   return (
+    <>
     <section className="mining-section">
       <div className="mining-header">
         <h2 className="section-title">Оборудование для майнинга</h2>
@@ -564,6 +566,8 @@ const MiningEquipment = () => {
         )}
       </div>
     </section>
+    <Testimonials subtitle="Отзывы о майнинговом оборудовании и доставке" />
+    </>
   );
 };
 

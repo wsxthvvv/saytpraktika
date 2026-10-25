@@ -1,7 +1,7 @@
 import { useCryptoRates } from '../contexts/CryptoRatesContext';
 
 const CryptoMarquee = () => {
-  const { simple, loading } = useCryptoRates();
+  const { simple, loading, error, updatedAt, stale } = useCryptoRates();
 
   if (loading && !simple) {
     return (
@@ -39,8 +39,12 @@ const CryptoMarquee = () => {
 
   const marqueeItems = [...items, ...items, ...items];
 
+  const updatedLabel = updatedAt
+    ? `Обновлено ${new Date(updatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
+    : 'Ожидаем данные';
+
   return (
-    <div className="crypto-marquee">
+    <div className={`crypto-marquee${stale || error ? ' crypto-marquee--stale' : ''}`}>
       <div className="crypto-marquee__content">
         {marqueeItems.map((item, index) => (
           <span key={index} className="crypto-marquee__item">
@@ -52,6 +56,9 @@ const CryptoMarquee = () => {
             )}
           </span>
         ))}
+        <span className="crypto-marquee__status" title={error ? 'Источник временно недоступен' : undefined}>
+          {error ? 'Данные из кэша' : updatedLabel}
+        </span>
       </div>
     </div>
   );

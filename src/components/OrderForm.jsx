@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { formatRussianPhone } from '../utils/phone';
 import PersonalDataConsentCheckbox from './PersonalDataConsentCheckbox';
+import { formatUsd } from '../utils/currency';
 import { submitLead } from '../api/submitLead';
 import { setLeadNotice } from '../utils/leadNotice';
 import { loadYandexMaps } from '../utils/loadYandexMaps';
@@ -357,6 +358,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
       id: Date.now(),
       items: cart,
       total,
+      currency: 'USD',
       contactName,
       email: formData.email,
       phone: formatRussianPhone(formData.phone),
@@ -372,21 +374,38 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
       .map((item) => `${item.name || item.title || 'Товар'} × ${item.quantity || 1}`)
       .join('; ');
 
-    const leadResult = await submitLead({
-      type: 'order',
-      name: contactName,
-      phone: order.phone,
-      email: order.email,
-      address: order.address,
-      deliveryDate: order.deliveryDate,
-      deliveryTime: order.deliveryTime,
-      comments: order.comments,
-      total: order.total,
-      itemsSummary,
-    });
+    let leadResult;
+    let savedOrder = order;
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...order, items: cart, itemsSummary }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Не удалось сохранить заказ');
+      savedOrder = data.order || order;
+      leadResult = { delivered: Boolean(data.delivered), stored: true };
+    } catch {
+      leadResult = await submitLead({
+        type: 'order',
+        name: contactName,
+        phone: order.phone,
+        email: order.email,
+        address: order.address,
+        deliveryDate: order.deliveryDate,
+        deliveryTime: order.deliveryTime,
+        comments: order.comments,
+        total: order.total,
+        itemsSummary,
+      });
+    }
 
     if (leadResult.delivered) {
       setLeadNotice('Заказ оформлен. Менеджер получил уведомление и свяжется с вами.');
+    } else if (leadResult.stored) {
+      setLeadNotice('Заказ сохранён. Менеджер увидит его в системе и свяжется с вами.');
     } else {
       setLeadNotice(
         'Заказ сохранён в личном кабинете — мы перезвоним. Уведомление в Telegram/MAX доставится после деплоя API. Телефон: +7 903 764 46 98, email: 5421062@mail.ru.'
@@ -396,7 +415,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
     const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (user.email) {
       user.orders = user.orders || [];
-      user.orders.push(order);
+      user.orders.push(savedOrder);
       Object.assign(user, {
         lastName: formData.lastName,
         firstName: formData.firstName,
@@ -413,7 +432,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
 
     clearCart();
     setIsSubmitting(false);
-    onOrderSubmit?.(order);
+    onOrderSubmit?.(savedOrder);
   };
 
   const minDate = new Date().toISOString().split('T')[0];
@@ -622,7 +641,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
             </div>
             <div className="order-summary__line order-summary__total">
               <span>Итого:</span>
-              <span className="order-total-amount">${total.toLocaleString('en-US')}</span>
+              <span className="order-total-amount">{formatUsd(total)}</span>
             </div>
           </div>
         </div>

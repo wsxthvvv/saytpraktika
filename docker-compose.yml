@@ -1,4 +1,18 @@
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-saytpraktika}
+      POSTGRES_USER: ${POSTGRES_USER:-saytpraktika_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-saytpraktika_app} -d ${POSTGRES_DB:-saytpraktika}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   web:
     build:
       context: .
@@ -11,10 +25,17 @@ services:
         REACT_APP_YANDEX_METRIKA_ID: ${REACT_APP_YANDEX_METRIKA_ID:-}
     ports:
       - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       NODE_ENV: production
       PORT: 8080
       HOST: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-saytpraktika_app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-saytpraktika}
     restart: unless-stopped
+
+volumes:
+  postgres-data:

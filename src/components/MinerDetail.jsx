@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import Testimonials from './Testimonials';
 
 const MinerDetail = () => {
   const { id } = useParams();
@@ -316,6 +317,7 @@ const MinerDetail = () => {
     </div>
   );
   return (
+    <>
     <div className="miner-detail-page">
       <div className="miner-detail-breadcrumbs">
         <Link to="/mining">Оборудование для майнинга</Link>
@@ -456,6 +458,8 @@ const MinerDetail = () => {
         </div>
       </div>
     </div>
+    <Testimonials subtitle="Отзывы о майнинговом оборудовании" />
+    </>
   );
 };
 export default MinerDetail;

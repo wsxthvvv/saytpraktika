@@ -1,6 +1,8 @@
 // src/components/Services.jsx
 import React, { useState } from 'react';
 import { useCart } from '../contexts/CartContext';
+import { formatUsd, formatRubPriceAsUsd, rubToUsd } from '../utils/currency';
+import Testimonials from './Testimonials';
 
 const Services = () => {
   const { addToCart } = useCart();
@@ -324,12 +326,14 @@ const Services = () => {
   };
 
   const formatMainPrice = (price) => {
-    if (price >= 1000000) return `₽${Math.round(price / 1000000)}M`;
-    if (price >= 1000) return `₽${Math.round(price / 1000)}K`;
-    return `₽${price}`;
+    const usdPrice = rubToUsd(price);
+    if (usdPrice >= 1000000) return `$${Math.round(usdPrice / 1000000)}M`;
+    if (usdPrice >= 1000) return `$${Math.round(usdPrice / 1000)}K`;
+    return formatUsd(usdPrice);
   };
 
   return (
+    <>
     <section className="services-section">
       <div className="services-header">
         <div>
@@ -368,7 +372,7 @@ const Services = () => {
                 {service.pricing.map((item, i) => (
                   <div key={i} className="pricing-item">
                     <span className="pricing-label">{item.type}</span>
-                    <span className="pricing-value">{item.rate}</span>
+                    <span className="pricing-value">{formatRubPriceAsUsd(item.rate)}</span>
                   </div>
                 ))}
               </div>
@@ -382,13 +386,14 @@ const Services = () => {
                     id: `consult-${service.id}`,
                     title: `Консультация по "${service.title}"`,
                     description: `Первичная консультация по услуге "${service.title}"`,
-                    price: 15,
+                    price: rubToUsd(1500),
+                    currency: 'USD',
                     quantity: 1,
                   };
                   addToCart(consultation);
                 }}
               >
-                Заказать консультацию — 1500 ₽
+                Заказать консультацию — {formatUsd(rubToUsd(1500))}
               </button>
               <button
                 type="button"
@@ -457,7 +462,7 @@ const Services = () => {
                     {selectedService.pricing.map((p, i) => (
                       <div key={i} className="pricing-detail">
                         <span className="pricing-type">{p.type}</span>
-                        <span className="pricing-rate">{p.rate}</span>
+                    <span className="pricing-rate">{formatRubPriceAsUsd(p.rate)}</span>
                       </div>
                     ))}
                   </div>
@@ -472,14 +477,15 @@ const Services = () => {
                     id: `consult-modal-${selectedService.id}`,
                     title: `Консультация по "${selectedService.title}"`,
                     description: `Консультация из модального окна`,
-                    price: 15,
+                    price: rubToUsd(1500),
+                    currency: 'USD',
                     quantity: 1,
                   };
                   addToCart(consultation);
                   closeDetails();
                 }}
               >
-                Заказать консультацию — 1500 ₽
+                Заказать консультацию — {formatUsd(rubToUsd(1500))}
               </button>
               <button className="btn-outline" onClick={closeDetails}>
                 Закрыть
@@ -489,6 +495,8 @@ const Services = () => {
         </div>
       )}
     </section>
+    <Testimonials subtitle="Отзывы о разработке и IT-сервисе" />
+    </>
   );
 };
 

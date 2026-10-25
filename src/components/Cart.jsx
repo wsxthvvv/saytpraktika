@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useState } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { formatUsd } from '../utils/currency';
 
 const OrderForm = lazy(() => import('./OrderForm'));
 
@@ -72,8 +73,7 @@ const Cart = () => {
                 </button>
               </div>
               <div className="cart-item-card__price">
-                {/* ✅ ИСПРАВЛЕНО: цена без дробной части */}
-                ${Math.round(item.price * (item.quantity || 1)).toLocaleString('en-US')}
+                {formatUsd(item.price * (item.quantity || 1))}
               </div>
               <button
                 onClick={() => removeFromCart(item.id)}
@@ -93,8 +93,7 @@ const Cart = () => {
         </div>
         <div className="cart-summary__line cart-summary__total">
           <span>Итого:</span>
-          {/* ✅ ИСПРАВЛЕНО: итоговая сумма без дробной части */}
-          <span className="cart-total-amount">${Math.round(total).toLocaleString('en-US')}</span>
+          <span className="cart-total-amount">{formatUsd(total)}</span>
         </div>
         <button
           className="btn btn--large cart-checkout"

@@ -159,7 +159,9 @@ const ContactWidget = () => {
               <p>
                 {sendResult.delivered
                   ? 'Заявка отправлена менеджеру. Мы перезвоним в рабочее время.'
-                  : 'Заявка сохранена на сайте — мы перезвоним. Уведомление в Telegram/MAX доставится после деплоя API. Срочно: +7 903 764 46 98 или 5421062@mail.ru.'}
+                  : sendResult.stored
+                    ? 'Заявка сохранена. Менеджер увидит её в системе и перезвонит.'
+                    : 'Заявка сохранена на этом устройстве. Уведомление в Telegram/MAX доставится после запуска API. Срочно: +7 903 764 46 98 или 5421062@mail.ru.'}
               </p>
               {!sendResult.delivered && sendResult.mailto && (
                 <a className="contact-widget__mailto" href={sendResult.mailto}>

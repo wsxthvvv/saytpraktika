@@ -206,6 +206,8 @@ const Auth = ({ onLogin, onRegister }) => {
 
           required
 
+          minLength={!isLogin ? 8 : undefined}
+
           autoComplete={isLogin ? 'current-password' : 'new-password'}
 
         />
