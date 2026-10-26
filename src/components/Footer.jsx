@@ -75,7 +75,7 @@ const Footer = () => {
               <li><Link to="/services">Услуги разработки</Link></li>
               <li><Link to="/mining">Каталог оборудования</Link></li>
               <li><Link to="/crypto">Конвертер криптовалют</Link></li>
-              <li><Link to="/blog">Наш блог</Link></li>
+              <li><Link to="/news">Новости</Link></li>
               <li><Link to="/profile">Личный кабинет</Link></li>
             </ul>
           </div>

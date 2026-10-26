@@ -4,7 +4,6 @@ import Technologies from '../components/Technologies';
 import FAQ from '../components/FAQ';
 import Testimonials from '../components/Testimonials';
 import AnimatedCounter from '../components/AnimatedCounter';
-import BlogPreview from '../components/BlogPreview';
 import RbcNewsFeed from '../components/RbcNewsFeed';
 
 const Home = () => {
@@ -98,7 +97,6 @@ const Home = () => {
       <Testimonials />
 <FAQ />
 <RbcNewsFeed limit={3} preview lazyWhenPreview />
-<BlogPreview /> {/* ← сюда */}
     </div>
   );
 };

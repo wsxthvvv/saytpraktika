@@ -13,7 +13,7 @@ const CryptoConverter = () => {
 
   const currencies = [
     { code: 'USD', name: 'US Dollar', symbol: '$', type: 'fiat' },
-    { code: 'RUB', name: 'Russian Ruble', symbol: '₽', type: 'fiat' },
+    { code: 'RUB', name: 'Russian Ruble', symbol: 'RUB', type: 'fiat' },
     { code: 'BTC', name: 'Bitcoin', symbol: '₿', type: 'crypto', id: 'bitcoin' },
     { code: 'ETH', name: 'Ethereum', symbol: 'Ξ', type: 'crypto', id: 'ethereum' },
   ];
@@ -113,7 +113,7 @@ const CryptoConverter = () => {
               >
                 {currencies.map((curr) => (
                   <option key={curr.code} value={curr.code}>
-                    {curr.symbol} {curr.code}
+                    {curr.symbol === curr.code ? curr.code : `${curr.symbol} ${curr.code}`}
                   </option>
                 ))}
               </select>
@@ -149,7 +149,7 @@ const CryptoConverter = () => {
               >
                 {currencies.map((curr) => (
                   <option key={curr.code} value={curr.code}>
-                    {curr.symbol} {curr.code}
+                    {curr.symbol === curr.code ? curr.code : `${curr.symbol} ${curr.code}`}
                   </option>
                 ))}
               </select>
@@ -186,7 +186,7 @@ const CryptoConverter = () => {
                 <span className="rate-card__name">USD/RUB</span>
               </div>
               <div className="rate-card__price">
-                {loading ? '—' : `1 $ = ${fiatRate?.toFixed(2)} ₽`}
+                {loading ? '—' : `1 USD = ${fiatRate?.toFixed(2)} RUB`}
               </div>
             </div>
           </div>

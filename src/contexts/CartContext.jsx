@@ -1,11 +1,23 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { rubToUsd } from '../utils/currency';
+import { isCartEligibleItem } from '../utils/cartItem';
+import { isAdminSession } from '../utils/sessionUser';
 
 const CartContext = createContext(null);
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem('cart');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    return parsed
+      .filter(isCartEligibleItem)
+      .map((item) => {
+        if (String(item.id).startsWith('product-') && item.currency !== 'USD') {
+          return { ...item, price: rubToUsd(item.price), currency: 'USD' };
+        }
+        return item;
+      });
   });
 
   useEffect(() => {
@@ -13,6 +25,13 @@ export const CartProvider = ({ children }) => {
   }, [cart]);
 
   const addToCart = (item) => {
+    if (isAdminSession()) {
+      return false;
+    }
+    if (!isCartEligibleItem(item)) {
+      console.warn('В корзину можно добавить только майнеры и товары каталога');
+      return false;
+    }
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
@@ -20,8 +39,9 @@ export const CartProvider = ({ children }) => {
           i.id === item.id ? { ...i, quantity: (i.quantity || 1) + 1 } : i
         );
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...item, currency: item.currency || 'USD', quantity: 1 }];
     });
+    return true;
   };
 
   const removeFromCart = (id) => {

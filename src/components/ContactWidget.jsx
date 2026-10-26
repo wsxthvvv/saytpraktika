@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import PersonalDataConsentCheckbox from './PersonalDataConsentCheckbox';
-import MessengerLinks from './MessengerLinks';
 import { submitLead } from '../api/submitLead';
 
 const ContactWidget = () => {
@@ -118,8 +117,6 @@ const ContactWidget = () => {
             <div className="contact-widget__contact-item">5421062@mail.ru</div>
           </div>
 
-          <MessengerLinks variant="stack" className="contact-widget__messengers" />
-
           <form className="contact-widget__form" onSubmit={handleRequestCall}>
             <input
               type="text"
@@ -158,14 +155,11 @@ const ContactWidget = () => {
             <div className="contact-widget__success" role="status">
               <p>
                 {sendResult.delivered
-                  ? 'Заявка отправлена менеджеру. Мы перезвоним в рабочее время.'
-                  : 'Заявка сохранена на сайте — мы перезвоним. Уведомление в Telegram/MAX доставится после деплоя API. Срочно: +7 903 764 46 98 или 5421062@mail.ru.'}
+                  ? 'Заявка отправлена руководителю. Мы перезвоним в рабочее время.'
+                  : sendResult.stored
+                    ? 'Заявка сохранена. Менеджер увидит её в системе и перезвонит.'
+                    : 'Заявка сохранена на этом устройстве и будет отправлена при подключении сервера. Срочно: +7 903 764 46 98, 5421062@mail.ru.'}
               </p>
-              {!sendResult.delivered && sendResult.mailto && (
-                <a className="contact-widget__mailto" href={sendResult.mailto}>
-                  Дублировать заявку на email
-                </a>
-              )}
             </div>
           )}
         </div>

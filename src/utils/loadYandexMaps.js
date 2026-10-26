@@ -17,8 +17,8 @@ export function loadYandexMaps() {
     }
 
     const apiKey = process.env.REACT_APP_YANDEX_MAPS_API_KEY;
-    let url = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU';
-    if (apiKey) {
+    let url = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU&load=package.full';
+    if (apiKey && apiKey !== 'your-yandex-maps-api-key') {
       url += `&apikey=${encodeURIComponent(apiKey)}`;
     }
 

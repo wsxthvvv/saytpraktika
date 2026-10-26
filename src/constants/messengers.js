@@ -1,3 +1,9 @@
+/**
+ * Публичной ссылки «как wa.me по номеру» у MAX нет — в .env укажите REACT_APP_MAX_CHAT_URL
+ * из приложения: Профиль → «Пригласить друзей» (https://max.ru/u/…), аккаунт +7 903 764-46-98.
+ */
+const defaultMaxHref = process.env.REACT_APP_MAX_PROFILE_URL || 'https://max.ru';
+
 export const MESSENGER_LINKS = {
   telegram: {
     id: 'telegram',
@@ -9,7 +15,7 @@ export const MESSENGER_LINKS = {
     id: 'max',
     label: 'Написать в MAX',
     shortLabel: 'MAX',
-    href: process.env.REACT_APP_MAX_CHAT_URL || 'https://max.ru',
+    href: process.env.REACT_APP_MAX_CHAT_URL || process.env.REACT_APP_MAX_PROFILE_URL || defaultMaxHref,
   },
 };
 

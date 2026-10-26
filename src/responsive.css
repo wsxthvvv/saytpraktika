@@ -28,7 +28,6 @@ iframe {
 
 .hero__title,
 .section-title,
-.blog-article-title,
 .rbc-news-card__title {
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -40,14 +39,12 @@ iframe {
 
 .services-grid > *,
 .miners-grid > *,
-.blog-posts-grid > *,
 .rbc-news__grid > *,
 .panels > *,
 .chart-main-section,
 .chart-sidebar,
 .service-card,
-.miner-card,
-.blog-post-card-full {
+.miner-card {
   min-width: 0;
 }
 
@@ -77,16 +74,11 @@ iframe {
   outline-offset: 2px;
 }
 
-.table-scroll,
-.blog-article-content table {
+.table-scroll {
   display: block;
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-}
-
-.blog-article-content table {
-  min-width: 480px;
 }
 
 body.mobile-nav-open {
@@ -264,8 +256,7 @@ body.mobile-nav-open {
 @media (max-width: 1023px) {
   .services-grid,
   .miners-grid,
-  .testimonials-grid,
-  .blog-posts-grid {
+  .testimonials-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.25rem;
   }
@@ -314,7 +305,6 @@ body.mobile-nav-open {
   .services-grid,
   .miners-grid,
   .testimonials-grid,
-  .blog-posts-grid,
   .panels {
     grid-template-columns: 1fr;
   }

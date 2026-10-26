@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import './responsive.css';
 import { CartProvider, useCart } from './contexts/CartContext';
@@ -11,8 +11,6 @@ import CryptoConverter from './components/CryptoConverter';
 import Profile from './components/Profile';
 import Services from './components/Services';
 import ProductsPage from './components/ProductsPage';
-import Blog from './components/Blog';
-import BlogArticle from './components/BlogArticle';
 import MinerDetail from './components/MinerDetail';
 import RbcNewsFeed from './components/RbcNewsFeed';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -23,8 +21,9 @@ import MessengerFab from './components/MessengerFab';
 import ScrollToTop from './components/ScrollToTop';
 import CryptoMarqueeGate from './components/CryptoMarqueeGate';
 import DocumentHead from './components/DocumentHead';
-import { toSessionUser } from './utils/userAuth';
+import { getCurrentUser, logoutUser, toSessionUser } from './utils/userAuth';
 import { flushPendingLeads } from './utils/flushPendingLeads';
+import AdminPanel from './components/AdminPanel';
 
 const Home = lazy(() => import('./pages/Home'));
 const ChartsPage = lazy(() => import('./components/ChartsPage'));
@@ -38,6 +37,8 @@ const RouteFallback = () => (
 
 function AppContent() {
   const { itemCount } = useCart();
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('currentUser');
     return stored ? toSessionUser(JSON.parse(stored)) : null;
@@ -57,34 +58,57 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
+    getCurrentUser().then((remoteUser) => {
+      if (remoteUser) {
+        localStorage.setItem('currentUser', JSON.stringify(remoteUser));
+        setUser(remoteUser);
+      } else {
+        localStorage.removeItem('currentUser');
+        setUser(null);
+      }
+    }).catch(() => {
+      // The profile page still renders the local cached state while the API is unavailable.
+    });
+  }, []);
+
+  useEffect(() => {
     flushPendingLeads();
   }, []);
 
   const handleLogin = (userData) => {
+    localStorage.setItem('currentUser', JSON.stringify(userData));
     setUser(userData);
   };
 
   const handleRegister = (userData) => {
+    localStorage.setItem('currentUser', JSON.stringify(userData));
     setUser(userData);
   };
 
   const handleLogout = () => {
+    logoutUser().catch(() => {});
+    localStorage.removeItem('currentUser');
     setUser(null);
   };
 
   return (
     <CryptoRatesProvider>
-      <div className="App">
-        <DocumentHead />
-        <a href="#main-content" className="skip-link">
-          Перейти к содержимому
-        </a>
-        <Header cartItemCount={itemCount} currentUser={user} />
-        <CryptoMarqueeGate />
-        <ScrollToTop />
-        <main id="main-content" className="main-content container">
+      <div className={`App${isAdminRoute ? ' App--admin' : ''}`}>
+        {!isAdminRoute && (
+          <>
+            <DocumentHead />
+            <a href="#main-content" className="skip-link">
+              Перейти к содержимому
+            </a>
+            <Header cartItemCount={itemCount} currentUser={user} />
+            <CryptoMarqueeGate />
+            <ScrollToTop />
+          </>
+        )}
+        <main id="main-content" className={isAdminRoute ? 'admin-main' : 'main-content container'}>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
+              <Route path="/admin" element={<AdminPanel />} />
               <Route path="/" element={<Home />} />
               <Route path="/services" element={<Services />} />
               <Route path="/products" element={<ProductsPage />} />
@@ -101,8 +125,6 @@ function AppContent() {
                 }
               />
               <Route path="/cart" element={<Cart />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:id" element={<BlogArticle />} />
               <Route path="/news" element={<RbcNewsFeed />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/consent" element={<ConsentPD />} />
@@ -112,10 +134,14 @@ function AppContent() {
             </Routes>
           </Suspense>
         </main>
-        <MessengerFab />
-        <ContactWidget />
-        <CookieBanner />
-        <Footer />
+        {!isAdminRoute && (
+          <>
+            <MessengerFab />
+            <ContactWidget />
+            <CookieBanner />
+            <Footer />
+          </>
+        )}
       </div>
     </CryptoRatesProvider>
   );

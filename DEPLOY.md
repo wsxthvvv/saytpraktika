@@ -11,6 +11,8 @@
 - `GET /api/health` → проверка деплоя
 - остальные GET → каталог `build/` (React SPA)
 
+Для пользователей, заказов и отзывов используется PostgreSQL. Сервер при первом запуске создаёт таблицы и администратора из `ADMIN_USERNAME` и `ADMIN_PASSWORD_HASH`.
+
 Фронт по умолчанию шлёт заявки на **`/api/leads`** (тот же домен) — отдельный `REACT_APP_LEAD_API_URL` на проде обычно не нужен.
 
 ## Переменные (.env на сервере)
@@ -24,6 +26,11 @@
 | `NODE_ENV` | `production` |
 | `PORT` | `8080` (за nginx) |
 | `HOST` | `0.0.0.0` в Docker; `127.0.0.1` за nginx на VPS |
+| `DATABASE_URL` | строка подключения PostgreSQL |
+| `DATABASE_SSL` | `true` для облачного PostgreSQL с TLS |
+| `ADMIN_USERNAME` | логин администратора |
+| `ADMIN_PASSWORD_HASH` | scrypt-хеш в формате `salt:hash` |
+| `ADMIN_SESSION_SECRET` | длинный случайный секрет сессий |
 
 Опционально: `MAX_WEBHOOK_URL`, `MAX_API_TOKEN`, `CORS_ORIGINS` (только если API на **другом** домене, чем сайт).
 
@@ -41,6 +48,8 @@ cp .env.example .env
 docker compose up -d --build
 curl -s http://127.0.0.1:8080/api/health
 ```
+
+Compose поднимает PostgreSQL с volume `postgres-data` и передаёт приложению `DATABASE_URL`. Перед первым production-запуском обязательно замените `POSTGRES_PASSWORD`, `ADMIN_PASSWORD_HASH` и `ADMIN_SESSION_SECRET`.
 
 Перед `docker compose build` можно экспортировать build-args для CRA (если нужны ключи в бандле):
 

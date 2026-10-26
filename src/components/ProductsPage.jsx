@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '../contexts/CartContext';
+import { formatUsd, rubToUsd } from '../utils/currency';
+import Testimonials from './Testimonials';
 
-const products = [
+const STATIC_PRODUCTS = [
   {
     id: 1,
     badge: 'NEW',
@@ -57,29 +59,43 @@ const products = [
 
 const ProductsPage = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [dbProducts, setDbProducts] = useState([]);
   const { addToCart } = useCart();
 
-  const formatPrice = (price) => `${price.toLocaleString('ru-RU')} ₽`;
+  useEffect(() => {
+    fetch('/api/products?category=computer')
+      .then((response) => response.json())
+      .then((data) => setDbProducts(data.products || []))
+      .catch(() => setDbProducts([]));
+  }, []);
+
+  const products = dbProducts.length ? dbProducts : STATIC_PRODUCTS;
+  const viewProduct = (product) => ({ ...product, ...(product.metadata || {}) });
+  const priceInUsd = (product) => product.currency === 'USD' ? product.price : rubToUsd(product.price);
+  const formatPrice = (product) => formatUsd(priceInUsd(product));
 
   return (
+    <>
     <section className="services-section">
       <div className="services-header products-header">
         <div>
           <h2 className="section-title">Товары</h2>
           <p className="services-subtitle">
-            Временный раздел с карточками-заглушками. Дизайн карточек совпадает с блоком услуг.
+            Компьютеры и серверы с актуальными конфигурациями и ценами в долларах.
           </p>
         </div>
       </div>
 
       <div className="services-grid">
-        {products.map((product) => (
+        {products.map((rawProduct) => {
+          const product = viewProduct(rawProduct);
+          return (
           <article key={product.id} className="service-card">
             <div className="service-card__badge">{product.badge}</div>
             <header className="service-card__header">
               <h3>{product.title}</h3>
             </header>
-            <div className="service-card__price-main">{formatPrice(product.price)}</div>
+            <div className="service-card__price-main">{formatPrice(product)}</div>
             <p className="service-card__description">{product.description}</p>
             <ul className="service-card__list">
               {product.features.map((feature) => (
@@ -91,11 +107,12 @@ const ProductsPage = () => {
                 type="button"
                 className="btn service-card__action"
                 onClick={() =>
-                  addToCart({
-                    id: `product-${product.id}`,
+                    addToCart({
+                    id: String(product.id).startsWith('product-') ? product.id : `product-${product.id}`,
                     title: product.title,
                     description: product.description,
-                    price: product.price,
+                    price: priceInUsd(product),
+                    currency: 'USD',
                   })
                 }
               >
@@ -110,7 +127,8 @@ const ProductsPage = () => {
               </button>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
 
       {selectedProduct && (
@@ -130,7 +148,7 @@ const ProductsPage = () => {
                 </div>
                 <div className="details-section">
                   <h3>Стоимость</h3>
-                  <p className="timeline">{formatPrice(selectedProduct.price)}</p>
+                  <p className="timeline">{formatPrice(selectedProduct)}</p>
                 </div>
                 <div className="details-section">
                   <h3>Характеристики</h3>
@@ -168,10 +186,11 @@ const ProductsPage = () => {
                 className="btn btn--large modal-order-btn"
                 onClick={() => {
                   addToCart({
-                    id: `product-${selectedProduct.id}`,
+                    id: String(selectedProduct.id).startsWith('product-') ? selectedProduct.id : `product-${selectedProduct.id}`,
                     title: selectedProduct.title,
                     description: selectedProduct.description,
-                    price: selectedProduct.price,
+                    price: priceInUsd(selectedProduct),
+                    currency: 'USD',
                   });
                   setSelectedProduct(null);
                 }}
@@ -186,6 +205,8 @@ const ProductsPage = () => {
         </div>
       )}
     </section>
+    <Testimonials subtitle="Отзывы о наших компьютерах и серверных решениях" />
+    </>
   );
 };
 

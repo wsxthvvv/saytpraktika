@@ -8,6 +8,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "dotenv": "^16.4.7",
+    "pg": "^8.23.1",
     "prop-types": "^15.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -16,13 +17,17 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
-  "proxy": "http://localhost:3001",
+  "proxy": "http://127.0.0.1:3001",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "start": "react-scripts start",
     "server": "node server/index.js",
+    "db:up": "docker compose up -d db",
+    "db:reset": "docker compose down -v && docker compose up -d db",
+    "admin:hash-password": "node scripts/hash-admin-password.js",
+    "dev:api": "node server/index.js",
     "build": "react-scripts build",
     "start:prod": "node server/index.js",
     "build:prod": "npm run build && node server/index.js",

@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useState } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { formatUsd } from '../utils/currency';
 
 const OrderForm = lazy(() => import('./OrderForm'));
 
@@ -15,9 +16,14 @@ const Cart = () => {
         <div className="cart-empty">
           <div className="cart-empty__icon">🛒</div>
           <h2 className="section-title">Корзина пуста</h2>
-          <p className="cart-empty__text">Добавьте услуги из каталога, чтобы продолжить</p>
-          <Link to="/services" className="btn">
-            Перейти к услугам
+          <p className="cart-empty__text">
+            Добавьте майнеры из каталога или товары. Услуги оформляются заявкой на странице «Услуги».
+          </p>
+          <Link to="/mining" className="btn">
+            Каталог майнеров
+          </Link>
+          <Link to="/products" className="btn-outline" style={{ marginTop: '0.75rem' }}>
+            Товары
           </Link>
         </div>
       </div>
@@ -72,8 +78,7 @@ const Cart = () => {
                 </button>
               </div>
               <div className="cart-item-card__price">
-                {/* ✅ ИСПРАВЛЕНО: цена без дробной части */}
-                ${Math.round(item.price * (item.quantity || 1)).toLocaleString('en-US')}
+                {formatUsd(item.price * (item.quantity || 1))}
               </div>
               <button
                 onClick={() => removeFromCart(item.id)}
@@ -93,8 +98,7 @@ const Cart = () => {
         </div>
         <div className="cart-summary__line cart-summary__total">
           <span>Итого:</span>
-          {/* ✅ ИСПРАВЛЕНО: итоговая сумма без дробной части */}
-          <span className="cart-total-amount">${Math.round(total).toLocaleString('en-US')}</span>
+          <span className="cart-total-amount">{formatUsd(total)}</span>
         </div>
         <button
           className="btn btn--large cart-checkout"
@@ -102,7 +106,7 @@ const Cart = () => {
         >
           Оформить заказ
         </button>
-        <Link to="/services" className="btn-outline">
+        <Link to="/mining" className="btn-outline">
           Продолжить покупки
         </Link>
       </div>

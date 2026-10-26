@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { formatRussianPhone } from '../utils/phone';
 import PersonalDataConsentCheckbox from './PersonalDataConsentCheckbox';
+import { formatUsd } from '../utils/currency';
 import { submitLead } from '../api/submitLead';
 import { setLeadNotice } from '../utils/leadNotice';
 import { loadYandexMaps } from '../utils/loadYandexMaps';
+import { resolveDeliveryAddress } from '../utils/yandexReverseGeocode';
 import { persistSessionProfile } from '../utils/userAuth';
 
 const OrderForm = ({ onOrderSubmit, onCancel }) => {
@@ -158,14 +160,22 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
     myMap.geoObjects.add(myPlacemark);
     placemarkRef.current = myPlacemark;
 
-    const updateAddressFromCoords = async (coords) => {
+    const applyCoordsToDelivery = async (coords, zoom = 17) => {
+      myPlacemark.geometry.setCoordinates(coords);
+      myMap.setCenter(coords, zoom, { duration: 200 });
       try {
-        const res = await ymaps.geocode(coords, { results: 1 });
-        const address = res.geoObjects?.get(0)?.getAddressLine() || `Координаты: ${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}`;
-        setFormData(prev => ({ ...prev, address }));
-        myPlacemark.geometry.setCoordinates(coords);
+        const address = await resolveDeliveryAddress(ymaps, coords);
+        if (address) {
+          setFormData((prev) => ({ ...prev, address }));
+          setMapNotice('');
+        } else {
+          setMapNotice(
+            'Не удалось определить адрес. Проверьте REACT_APP_YANDEX_MAPS_API_KEY в .env и перезапустите npm run server и npm start, либо введите адрес вручную.'
+          );
+        }
       } catch (err) {
         console.error('Ошибка геокодирования:', err);
+        setMapNotice('Не удалось определить адрес. Попробуйте ещё раз или введите вручную.');
       }
     };
 
@@ -174,18 +184,18 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
       const coordsMatch = currentAddress.match(/Координаты:\s*([\d.]+),\s*([\d.]+)/);
       if (coordsMatch) {
         const coords = [parseFloat(coordsMatch[1]), parseFloat(coordsMatch[2])];
-        updateAddressFromCoords(coords);
+        applyCoordsToDelivery(coords);
       }
     }
 
     myMap.events.add('click', (e) => {
       const coords = e.get('coords');
-      updateAddressFromCoords(coords);
+      applyCoordsToDelivery(coords);
     });
 
     myPlacemark.events.add('dragend', () => {
       const coords = myPlacemark.geometry.getCoordinates();
-      updateAddressFromCoords(coords);
+      applyCoordsToDelivery(coords);
     });
 
     mapRef.current.instance = myMap;
@@ -213,42 +223,20 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
           const placemark = placemarkRef.current;
 
           try {
-            // Геокодируем координаты в адрес
-            const res = await ymaps.geocode(coords, { results: 1 });
-            const geoObject = res.geoObjects.get(0);
-            
-            if (geoObject) {
-              const address = geoObject.getAddressLine();
-              setFormData(prev => ({ ...prev, address }));
-              
-              // Обновляем карту
-              map.setCenter(coords, 15);
-              if (placemark) {
-                placemark.geometry.setCoordinates(coords);
-              }
+            map.setCenter(coords, 17);
+            if (placemark) placemark.geometry.setCoordinates(coords);
+            const address = await resolveDeliveryAddress(ymaps, coords);
+            if (address) {
+              setFormData((prev) => ({ ...prev, address }));
+              setMapNotice('');
             } else {
-              // Если адрес не найден, используем координаты
-              setFormData(prev => ({ 
-                ...prev, 
-                address: `Координаты: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}` 
-              }));
-              map.setCenter(coords, 15);
-              if (placemark) {
-                placemark.geometry.setCoordinates(coords);
-              }
+              setMapNotice('Точка отмечена. Уточните адрес вручную или кликните по дому на карте.');
             }
           } catch (err) {
             console.error('Ошибка геокодирования:', err);
-            // В случае ошибки все равно показываем координаты на карте
-            setFormData(prev => ({ 
-              ...prev, 
-              address: `Координаты: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}` 
-            }));
-            map.setCenter(coords, 15);
-            if (placemark) {
-              placemark.geometry.setCoordinates(coords);
-            }
-            setMapNotice('Не удалось определить адрес по координатам, но точка отмечена на карте.');
+            map.setCenter(coords, 17);
+            if (placemark) placemark.geometry.setCoordinates(coords);
+            setMapNotice('Точка отмечена на карте. Введите адрес вручную, если он не подставился.');
           }
         } else {
           // Если карта еще не загружена, сохраняем координаты и адрес
@@ -263,12 +251,8 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
             window.ymaps.ready(async () => {
               try {
                 const ymaps = window.ymaps;
-                const res = await ymaps.geocode(coords, { results: 1 });
-                const geoObject = res.geoObjects.get(0);
-                if (geoObject) {
-                  const address = geoObject.getAddressLine();
-                  setFormData(prev => ({ ...prev, address }));
-                }
+                const address = await resolveDeliveryAddress(ymaps, coords);
+                if (address) setFormData((prev) => ({ ...prev, address }));
               } catch (err) {
                 console.error('Ошибка геокодирования:', err);
               }
@@ -306,34 +290,43 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
     );
   };
 
+  const geocodeAddressField = async () => {
+    const address = formData.address.trim();
+    if (!address || !ymapsRef.current || !mapRef.current?.instance) {
+      setMapNotice('Введите адрес или выберите точку на карте.');
+      return;
+    }
+    try {
+      const ymaps = ymapsRef.current;
+      const res = await ymaps.geocode(address, { results: 1, kind: 'house' });
+      let geoObject = res.geoObjects.get(0);
+      if (!geoObject) {
+        const fallback = await ymaps.geocode(address, { results: 1 });
+        geoObject = fallback.geoObjects.get(0);
+      }
+      if (geoObject) {
+        const coords = geoObject.geometry.getCoordinates();
+        const canonicalAddress = geoObject.getAddressLine() || address;
+        const map = mapRef.current.instance;
+        const placemark = placemarkRef.current;
+        map.setCenter(coords, 17);
+        placemark.geometry.setCoordinates(coords);
+        setFormData((prev) => ({ ...prev, address: canonicalAddress }));
+        setMapNotice('');
+      } else {
+        setMapNotice('Адрес не найден. Уточните или отметьте точку на карте.');
+      }
+    } catch (err) {
+      console.error('Ошибка поиска адреса:', err);
+      setMapNotice('Не удалось найти адрес. Проверьте написание.');
+    }
+  };
+
   // Геокодирование по нажатию Enter
   const handleAddressKeyDown = async (e) => {
     if (e.key === 'Enter') {
-      e.preventDefault(); // предотвращает отправку формы
-      const address = formData.address.trim();
-      if (!address || !ymapsRef.current || !mapRef.current?.instance) return;
-
-      try {
-        const ymaps = ymapsRef.current;
-        const res = await ymaps.geocode(address, { results: 1 });
-        const geoObject = res.geoObjects.get(0);
-        if (geoObject) {
-          const coords = geoObject.geometry.getCoordinates();
-          const canonicalAddress = geoObject.getAddressLine();
-
-          const map = mapRef.current.instance;
-          const placemark = placemarkRef.current;
-
-          map.setCenter(coords, 15);
-          placemark.geometry.setCoordinates(coords);
-          setFormData(prev => ({ ...prev, address: canonicalAddress }));
-        } else {
-          setMapNotice('Адрес не найден. Попробуйте уточнить.');
-        }
-      } catch (err) {
-        console.error('Ошибка поиска адреса:', err);
-        setMapNotice('Не удалось найти адрес. Проверьте написание.');
-      }
+      e.preventDefault();
+      geocodeAddressField();
     }
   };
 
@@ -357,6 +350,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
       id: Date.now(),
       items: cart,
       total,
+      currency: 'USD',
       contactName,
       email: formData.email,
       phone: formatRussianPhone(formData.phone),
@@ -372,31 +366,48 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
       .map((item) => `${item.name || item.title || 'Товар'} × ${item.quantity || 1}`)
       .join('; ');
 
-    const leadResult = await submitLead({
-      type: 'order',
-      name: contactName,
-      phone: order.phone,
-      email: order.email,
-      address: order.address,
-      deliveryDate: order.deliveryDate,
-      deliveryTime: order.deliveryTime,
-      comments: order.comments,
-      total: order.total,
-      itemsSummary,
-    });
+    let leadResult;
+    let savedOrder = order;
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...order, items: cart, itemsSummary }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Не удалось сохранить заказ');
+      savedOrder = data.order || order;
+      leadResult = { delivered: Boolean(data.delivered), stored: true };
+    } catch {
+      leadResult = await submitLead({
+        type: 'order',
+        name: contactName,
+        phone: order.phone,
+        email: order.email,
+        address: order.address,
+        deliveryDate: order.deliveryDate,
+        deliveryTime: order.deliveryTime,
+        comments: order.comments,
+        total: order.total,
+        itemsSummary,
+      });
+    }
 
     if (leadResult.delivered) {
       setLeadNotice('Заказ оформлен. Менеджер получил уведомление и свяжется с вами.');
+    } else if (leadResult.stored) {
+      setLeadNotice('Заказ сохранён. Менеджер увидит его в системе и свяжется с вами.');
     } else {
       setLeadNotice(
-        'Заказ сохранён в личном кабинете — мы перезвоним. Уведомление в Telegram/MAX доставится после деплоя API. Телефон: +7 903 764 46 98, email: 5421062@mail.ru.'
+        'Заказ сохранён в личном кабинете. Менеджер свяжется с вами. Телефон: +7 903 764 46 98, email: 5421062@mail.ru.'
       );
     }
 
     const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (user.email) {
       user.orders = user.orders || [];
-      user.orders.push(order);
+      user.orders.push(savedOrder);
       Object.assign(user, {
         lastName: formData.lastName,
         firstName: formData.firstName,
@@ -413,7 +424,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
 
     clearCart();
     setIsSubmitting(false);
-    onOrderSubmit?.(order);
+    onOrderSubmit?.(savedOrder);
   };
 
   const minDate = new Date().toISOString().split('T')[0];
@@ -513,33 +524,27 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
           <div className="order-form__section">
             <h4 className="order-form__section-title">Адрес доставки</h4>
             <div className="form-field">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <label htmlFor="address">Адрес *</label>
-                <button
-                  type="button"
-                  onClick={detectLocation}
-                  disabled={isLocating}
-                  className="btn-outline"
-                  style={{ 
-                    fontSize: '0.875rem', 
-                    padding: '0.5rem 1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}
-                  title="Определить адрес по текущему местоположению"
-                >
-                  {isLocating ? (
-                    <>
-                      <span className="btn-spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }}></span>
-                      Определение...
-                    </>
-                  ) : (
-                    <>
-                      📍 Определить местоположение
-                    </>
-                  )}
-                </button>
+              <div className="order-form__address-toolbar">
+                <label htmlFor="address">Адрес доставки *</label>
+                <div className="order-form__address-actions">
+                  <button
+                    type="button"
+                    onClick={geocodeAddressField}
+                    className="btn-outline order-form__address-btn"
+                    title="Найти введённый адрес на карте"
+                  >
+                    Найти на карте
+                  </button>
+                  <button
+                    type="button"
+                    onClick={detectLocation}
+                    disabled={isLocating}
+                    className="btn-outline order-form__address-btn"
+                    title="Определить адрес по геолокации"
+                  >
+                    {isLocating ? 'Определение…' : 'Моё местоположение'}
+                  </button>
+                </div>
               </div>
               <input
                 type="text"
@@ -549,7 +554,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
                 onChange={handleChange}
                 onKeyDown={handleAddressKeyDown}
                 required
-                placeholder="Введите адрес и нажмите Enter или используйте кнопку определения местоположения"
+                placeholder="Город, улица, дом — Enter или «Найти на карте»; можно кликнуть по карте"
                 autoComplete="street-address"
               />
               {mapNotice && (
@@ -559,7 +564,9 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
               )}
             </div>
             <div className="order-form__map-container">
-              <label className="order-form__map-label">Выберите адрес на карте Москвы</label>
+              <label className="order-form__map-label">
+                Кликните по дому на карте или перетащите метку — адрес доставки заполнится автоматически
+              </label>
               <div
                 ref={mapRef}
                 className="order-form__map"
@@ -622,7 +629,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
             </div>
             <div className="order-summary__line order-summary__total">
               <span>Итого:</span>
-              <span className="order-total-amount">${total.toLocaleString('en-US')}</span>
+              <span className="order-total-amount">{formatUsd(total)}</span>
             </div>
           </div>
         </div>

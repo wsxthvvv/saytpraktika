@@ -167,25 +167,15 @@ const Auth = ({ onLogin, onRegister }) => {
         )}
 
         <input
-
-          type="email"
-
-          placeholder="Email"
-
+          type={isLogin ? 'text' : 'email'}
+          placeholder={isLogin ? 'Email или логин (admin)' : 'Email'}
           value={email}
-
           onChange={(e) => {
-
             setEmail(e.target.value);
-
             if (authError) setAuthError('');
-
           }}
-
           required
-
-          autoComplete="email"
-
+          autoComplete={isLogin ? 'username' : 'email'}
         />
 
         <input
@@ -205,6 +195,8 @@ const Auth = ({ onLogin, onRegister }) => {
           }}
 
           required
+
+          minLength={!isLogin ? 8 : undefined}
 
           autoComplete={isLogin ? 'current-password' : 'new-password'}
 

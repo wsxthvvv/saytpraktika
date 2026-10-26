@@ -58,7 +58,13 @@ export const submitLead = async (payload, options = {}) => {
       };
     }
 
-    return { ok: true, delivered: true, queued: false, data };
+    return {
+      ok: true,
+      delivered: Boolean(data.delivered),
+      stored: Boolean(data.stored),
+      queued: false,
+      data,
+    };
   } catch (error) {
     if (queueOnFailure) queueLeadLocally(payload);
     return {
