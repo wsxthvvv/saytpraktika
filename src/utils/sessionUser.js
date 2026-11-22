@@ -1,10 +1,4 @@
-export const readStoredUser = () => {
-  try {
-    const raw = localStorage.getItem('currentUser');
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
-export const isAdminSession = () => readStoredUser()?.role === 'admin';
+let sessionUser = null;
+export const readStoredUser = () => sessionUser;
+export const setSessionUser = (user) => { sessionUser = user || null; };
+export const isAdminSession = () => sessionUser?.role === 'admin';

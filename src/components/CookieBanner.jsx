@@ -42,7 +42,7 @@ const CookieBanner = () => {
           <p id="cookie-banner-title" className="cookie-banner__title">Мы используем cookie</p>
           <p className="cookie-banner__desc">
             Сайт применяет cookie и localStorage для работы сервисов и сохранения настроек.
-            Конвертер и новости могут обращаться к внешним API (CoinGecko, РБК и др.) — см.{' '}
+            Котировки загружает сервер из внешнего API; лента новостей также получает данные РБК. См.{' '}
             <Link to="/privacy">Политику конфиденциальности</Link>, раздел 7.
           </p>
         </div>

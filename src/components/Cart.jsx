@@ -8,7 +8,46 @@ const OrderForm = lazy(() => import('./OrderForm'));
 const Cart = () => {
   const { cart, removeFromCart, updateQuantity, total, clearCart } = useCart();
   const [showOrderForm, setShowOrderForm] = useState(false);
+  const [placedOrder, setPlacedOrder] = useState(null);
+  const [checkingAccount, setCheckingAccount] = useState(false);
+  const [checkoutMessage, setCheckoutMessage] = useState('');
   const navigate = useNavigate();
+  const hasUnavailableItems = cart.some((item) => !item.isAvailable || Number(item.stock) < Number(item.quantity || 1));
+
+  const openOrderForm = async () => {
+    setCheckingAccount(true);
+    setCheckoutMessage('');
+    try {
+      const response = await fetch('/api/auth/me', { credentials: 'include' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Не удалось проверить вход в аккаунт');
+      if (!data.authenticated) {
+        setCheckoutMessage('Для оформления заказа войдите в аккаунт. Корзина сохранится.');
+        return;
+      }
+      if (data.user?.role !== 'customer') {
+        setCheckoutMessage('Оформлять заказы могут только аккаунты покупателей.');
+        return;
+      }
+      setShowOrderForm(true);
+    } catch (error) {
+      setCheckoutMessage(error.message || 'Не удалось проверить вход в аккаунт. Попробуйте ещё раз.');
+    } finally {
+      setCheckingAccount(false);
+    }
+  };
+
+  if (placedOrder) {
+    return (
+      <div className="cart-page cart-success" role="status">
+        <h1 className="section-title">Заказ оформлен</h1>
+        <p>Номер заказа: <strong>#{placedOrder.orderNumber || String(placedOrder.id).slice(0, 8)}</strong></p>
+        <p>Заказ сохранён. Стоимость и срок доставки подтвердит менеджер.</p>
+        <Link to="/profile" className="btn">Открыть личный кабинет</Link>
+        <Link to="/products" className="btn-outline">Вернуться в каталог</Link>
+      </div>
+    );
+  }
 
   if (cart.length === 0) {
     return (
@@ -17,10 +56,10 @@ const Cart = () => {
           <div className="cart-empty__icon">🛒</div>
           <h2 className="section-title">Корзина пуста</h2>
           <p className="cart-empty__text">
-            Добавьте майнеры из каталога или товары. Услуги оформляются заявкой на странице «Услуги».
+            Добавьте оборудование или компьютер в разделе «Товары». Услуги оформляются на странице «Услуги».
           </p>
-          <Link to="/mining" className="btn">
-            Каталог майнеров
+          <Link to="/products?category=miner" className="btn">
+            Майнеры в товарах
           </Link>
           <Link to="/products" className="btn-outline" style={{ marginTop: '0.75rem' }}>
             Товары
@@ -44,6 +83,7 @@ const Cart = () => {
             <div className="cart-item-card__info">
               <h3 className="cart-item-card__title">{item.title}</h3>
               <p className="cart-item-card__description">{item.description}</p>
+              {hasUnavailableItems && (!item.isAvailable || Number(item.stock) < Number(item.quantity || 1)) && <p className="contact-widget__error" role="alert">Товара нет в нужном количестве. Удалите позицию или проверьте остаток.</p>}
               {item.deliverables && (
                 <ul className="cart-item-card__deliverables">
                   {item.deliverables.slice(0, 2).map((del, idx) => (
@@ -61,6 +101,7 @@ const Cart = () => {
                     updateQuantity(item.id, newQuantity);
                   }}
                   className="quantity-btn"
+                  disabled={!item.isAvailable || Number(item.stock) < Number(item.quantity || 1)}
                   aria-label="Уменьшить количество"
                 >
                   −
@@ -72,6 +113,7 @@ const Cart = () => {
                     updateQuantity(item.id, (item.quantity || 1) + 1);
                   }}
                   className="quantity-btn"
+                  disabled={!item.isAvailable || Number(item.stock) < Number(item.quantity || 1) || Number(item.quantity || 1) >= Number(item.stock)}
                   aria-label="Увеличить количество"
                 >
                   +
@@ -102,11 +144,17 @@ const Cart = () => {
         </div>
         <button
           className="btn btn--large cart-checkout"
-          onClick={() => setShowOrderForm(true)}
+          onClick={openOrderForm}
+          disabled={hasUnavailableItems || checkingAccount}
         >
-          Оформить заказ
+          {checkingAccount ? 'Проверяем аккаунт…' : 'Оформить заказ'}
         </button>
-        <Link to="/mining" className="btn-outline">
+        {checkoutMessage && (
+          <p className="contact-widget__error" role="status">
+            {checkoutMessage.includes('войдите в аккаунт') ? <>{checkoutMessage} <Link to="/profile">Войти</Link></> : checkoutMessage}
+          </p>
+        )}
+        <Link to="/products" className="btn-outline">
           Продолжить покупки
         </Link>
       </div>
@@ -117,10 +165,8 @@ const Cart = () => {
               <OrderForm
                 onOrderSubmit={(_order, updatedUser) => {
                   setShowOrderForm(false);
-                  if (updatedUser) {
-                    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-                  }
-                  navigate('/profile');
+                  setPlacedOrder(_order);
+                  if (updatedUser) navigate('/profile');
                 }}
                 onCancel={() => setShowOrderForm(false)}
               />

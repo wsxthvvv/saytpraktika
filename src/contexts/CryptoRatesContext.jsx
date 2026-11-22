@@ -8,11 +8,8 @@ import {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const COINGECKO_SIMPLE_URL =
-  'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true';
-
 const CACHE_KEY = '01service_crypto_rates_v1';
-const CACHE_TTL = 120000;
+const CACHE_TTL = 60000;
 
 const readCache = () => {
   try {
@@ -33,6 +30,7 @@ export const CryptoRatesProvider = ({ children }) => {
   const shouldPoll = RATES_ROUTES.includes(pathname);
   const [cached] = useState(readCache);
   const [simple, setSimple] = useState(cached?.data || null);
+  const [markets, setMarkets] = useState(cached?.markets || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [updatedAt, setUpdatedAt] = useState(cached?.updatedAt || null);
@@ -44,13 +42,20 @@ export const CryptoRatesProvider = ({ children }) => {
       setError(null);
       const controller = new AbortController();
       timeout = window.setTimeout(() => controller.abort(), 10000);
-      const res = await fetch(COINGECKO_SIMPLE_URL, { signal: controller.signal });
+      const res = await fetch('/api/crypto/markets', { signal: controller.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setSimple(data);
-      const nextUpdatedAt = Date.now();
+      if (!data.ok) throw new Error(data.error || 'Курсы временно недоступны');
+      setSimple(data.simple || null);
+      setMarkets(Array.isArray(data.markets) ? data.markets : []);
+      const nextUpdatedAt = data.updatedAt ? new Date(data.updatedAt).getTime() : Date.now();
       setUpdatedAt(nextUpdatedAt);
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data, updatedAt: nextUpdatedAt }));
+      setError(data.error || null);
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: data.simple, markets: data.markets || [], updatedAt: nextUpdatedAt }));
+      } catch {
+        // Кэш браузера необязателен; приватный режим не должен помечать свежий ответ как ошибку.
+      }
     } catch (err) {
       setError(err.name === 'AbortError' ? 'timeout' : err.message || 'fetch_failed');
     } finally {
@@ -69,6 +74,7 @@ export const CryptoRatesProvider = ({ children }) => {
   const value = useMemo(
     () => ({
       simple,
+      markets,
       loading: shouldPoll && loading && !simple,
       error,
       refresh: fetchRates,
@@ -76,7 +82,7 @@ export const CryptoRatesProvider = ({ children }) => {
       updatedAt,
       stale: Boolean(updatedAt && Date.now() - updatedAt > CACHE_TTL),
     }),
-    [simple, loading, error, fetchRates, shouldPoll, updatedAt]
+    [simple, markets, loading, error, fetchRates, shouldPoll, updatedAt]
   );
 
   return (

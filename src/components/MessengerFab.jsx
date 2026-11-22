@@ -1,12 +1,14 @@
 import { MESSENGER_LINKS } from '../constants/messengers';
 import { MaxIcon, TelegramIcon } from './MessengerIcons';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
-const fabItems = [
-  { ...MESSENGER_LINKS.telegram, Icon: TelegramIcon },
-  { ...MESSENGER_LINKS.max, Icon: MaxIcon },
-];
-
-const MessengerFab = () => (
+const MessengerFab = () => {
+  const { contacts } = useSiteSettings();
+  const fabItems = [
+    { ...MESSENGER_LINKS.telegram, href: contacts.telegramUrl || MESSENGER_LINKS.telegram.href, Icon: TelegramIcon },
+    { ...MESSENGER_LINKS.max, href: contacts.maxUrl, Icon: MaxIcon },
+  ].filter((item) => item.href);
+  return (
   <div className="messenger-fab" aria-label="Быстрые мессенджеры">
     {fabItems.map(({ id, href, label, Icon }) => (
       <a
@@ -22,6 +24,7 @@ const MessengerFab = () => (
       </a>
     ))}
   </div>
-);
+  );
+};
 
 export default MessengerFab;

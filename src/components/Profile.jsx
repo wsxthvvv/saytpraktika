@@ -2,37 +2,45 @@
 import { useState, useEffect } from 'react';
 import Auth from './Auth';
 import { Link } from 'react-router-dom';
-import { changePassword, mergeSessionWithRecord, persistSessionProfile, toSessionUser } from '../utils/userAuth';
+import { changePassword, persistSessionProfile } from '../utils/userAuth';
 import { consumeLeadNotice } from '../utils/leadNotice';
-import { formatUsd, rubToUsd } from '../utils/currency';
+import { formatUsd } from '../utils/currency';
 
-const ReviewForm = ({ orderId, onSubmitted }) => {
+const ReviewForm = ({ orderId, productId, productTitle, onSubmitted }) => {
   const [rating, setRating] = useState(5);
   const [text, setText] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const submit = async (event) => {
     event.preventDefault();
     setBusy(true);
     setNotice('');
-    const response = await fetch('/api/reviews', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId, rating: Number(rating), text }),
-    });
-    const data = await response.json().catch(() => ({}));
-    setBusy(false);
-    if (!response.ok) {
-      setNotice(data.error || 'Не удалось отправить отзыв');
-      return;
+    try {
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, productId, rating: Number(rating), text }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setNotice(data.error || 'Не удалось отправить отзыв');
+        return;
+      }
+      setNotice(`Отзыв о товаре «${productTitle || 'товар'}» отправлен на проверку.`);
+      setText('');
+      setSubmitted(true);
+      onSubmitted?.();
+    } catch {
+      setNotice('Не удалось связаться с сервером. Проверьте соединение и повторите отправку.');
+    } finally {
+      setBusy(false);
     }
-    setNotice('Отзыв отправлен на проверку.');
-    setText('');
-    onSubmitted?.();
   };
 
+  if (submitted) return <p className="profile-review-form" role="status">Отзыв на «{productTitle || 'товар'}» отправлен на проверку.</p>;
   return (
     <form className="profile-review-form" onSubmit={submit}>
       <strong>Оставить отзыв</strong>
@@ -51,15 +59,9 @@ const ReviewForm = ({ orderId, onSubmitted }) => {
 };
 
 const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
-  const readUser = () => {
-    const saved = localStorage.getItem('currentUser');
-    if (!saved) return currentUser || null;
-    return mergeSessionWithRecord(toSessionUser(JSON.parse(saved)));
-  };
-
-  const [user, setUser] = useState(readUser);
+  const [user, setUser] = useState(currentUser || null);
   const [leadNotice] = useState(() => consumeLeadNotice());
-  const [passwords, setPasswords] = useState({ current: '', next: '' });
+  const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
   const [passwordNotice, setPasswordNotice] = useState('');
   const [profileForm, setProfileForm] = useState({
     firstName: '',
@@ -72,27 +74,28 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
   const [profileNotice, setProfileNotice] = useState('');
 
   useEffect(() => {
-    const syncUser = () => {
-      setUser(readUser());
-    };
-
-    syncUser();
+    setUser(currentUser || null);
     if (currentUser?.id) {
       fetch('/api/orders', { credentials: 'include' })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.ok) setUser((previous) => ({ ...previous, orders: data.orders }));
+        .then(async (response) => {
+          const ordersData = await response.json();
+          const reviewsResponse = await fetch('/api/reviews?mine=1', { credentials: 'include' });
+          const reviewsData = await reviewsResponse.json().catch(() => ({}));
+          return { ordersData, reviewsData };
+        })
+        .then(({ ordersData, reviewsData }) => {
+          if (ordersData.ok) {
+            const reviewed = new Set((reviewsData.reviews || []).map((review) => `${review.orderId}:${review.productId}`));
+            const orders = ordersData.orders.map((order) => ({
+              ...order,
+              items: (order.items || []).map((item) => ({ ...item, hasReview: reviewed.has(`${order.id}:${item.id}`) })),
+            }));
+            setUser((previous) => previous?.id === currentUser.id ? { ...previous, orders } : previous);
+          }
         })
         .catch(() => {});
     }
-    window.addEventListener('storage', syncUser);
-    window.addEventListener('userUpdated', syncUser);
-    return () => {
-      window.removeEventListener('storage', syncUser);
-      window.removeEventListener('userUpdated', syncUser);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- readUser стабильна по смыслу
-  }, [currentUser?.id]);
+  }, [currentUser]);
 
   useEffect(() => {
     if (!user) return;
@@ -108,29 +111,31 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
   }, [user?.id, user?.email]);
 
   const handleLogin = (userData) => {
-    const merged = mergeSessionWithRecord(userData);
-    localStorage.setItem('currentUser', JSON.stringify(merged));
-    setUser(merged);
-    onLogin?.(merged);
+    setUser(userData);
+    onLogin?.(userData);
   };
 
   const handleRegister = (userData) => {
-    localStorage.setItem('currentUser', JSON.stringify(userData));
-    persistSessionProfile(userData);
     setUser(userData);
     onRegister?.(userData);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
     setUser(null);
     onLogout?.();
   };
 
   const cancelOrder = async (orderId) => {
-    const response = await fetch(`/api/orders/${orderId}/cancel`, { method: 'PATCH', credentials: 'include' });
-    if (!response.ok) return;
-    setUser((previous) => ({ ...previous, orders: previous.orders.map((order) => order.id === orderId ? { ...order, status: 'Отменена' } : order) }));
+    if (!window.confirm('Отменить новый заказ?')) return;
+    const reason = window.prompt('Причина отмены (необязательно):') || '';
+    try {
+      const response = await fetch(`/api/orders/${orderId}/cancel`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) { window.alert(data.error || 'Не удалось отменить заказ'); return; }
+      setUser((previous) => ({ ...previous, orders: previous.orders.map((order) => order.id === orderId ? data.order : order) }));
+    } catch {
+      window.alert('Не удалось связаться с сервером. Заказ не изменён.');
+    }
   };
 
   const handleProfileSave = async (event) => {
@@ -146,18 +151,26 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
       setProfileNotice(result.error || 'Не удалось сохранить профиль');
       return;
     }
-    localStorage.setItem('currentUser', JSON.stringify(merged));
-    setUser(merged);
-    window.dispatchEvent(new Event('userUpdated'));
+    const updatedUser = result.user || merged;
+    setUser((previous) => ({ ...previous, ...updatedUser, orders: previous?.orders || [] }));
+    onLogin?.(updatedUser);
     setProfileNotice('Данные профиля сохранены.');
   };
 
   const handlePasswordChange = async (event) => {
     event.preventDefault();
     setPasswordNotice('');
-    const result = await changePassword(passwords.current, passwords.next);
-    setPasswordNotice(result.ok ? 'Пароль изменён.' : result.error);
-    if (result.ok) setPasswords({ current: '', next: '' });
+    if (passwords.next !== passwords.confirm) {
+      setPasswordNotice('Новые пароли не совпадают.');
+      return;
+    }
+    try {
+      const result = await changePassword(passwords.current, passwords.next, passwords.confirm);
+      setPasswordNotice(result.ok ? 'Пароль изменён.' : result.error || 'Не удалось изменить пароль.');
+      if (result.ok) setPasswords({ current: '', next: '', confirm: '' });
+    } catch {
+      setPasswordNotice('Не удалось связаться с сервером. Попробуйте позже.');
+    }
   };
 
   const fullName = user
@@ -229,8 +242,12 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
             </div>
             <form className="profile-password-form" onSubmit={handlePasswordChange}>
               <h3>Смена пароля</h3>
-              <input type="password" placeholder="Текущий пароль" value={passwords.current} onChange={(event) => setPasswords({ ...passwords, current: event.target.value })} required />
-              <input type="password" placeholder="Новый пароль (от 8 символов)" minLength={8} value={passwords.next} onChange={(event) => setPasswords({ ...passwords, next: event.target.value })} required />
+              <label htmlFor="profile-current-password">Текущий пароль</label>
+              <input id="profile-current-password" type="password" autoComplete="current-password" value={passwords.current} onChange={(event) => setPasswords({ ...passwords, current: event.target.value })} required />
+              <label htmlFor="profile-new-password">Новый пароль</label>
+              <input id="profile-new-password" type="password" autoComplete="new-password" minLength={8} value={passwords.next} onChange={(event) => setPasswords({ ...passwords, next: event.target.value })} required />
+              <label htmlFor="profile-confirm-password">Повторите новый пароль</label>
+              <input id="profile-confirm-password" type="password" autoComplete="new-password" minLength={8} value={passwords.confirm} onChange={(event) => setPasswords({ ...passwords, confirm: event.target.value })} required />
               <button type="submit" className="btn-outline">Изменить пароль</button>
               {passwordNotice && <p role="status">{passwordNotice}</p>}
             </form>
@@ -241,7 +258,7 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
                   <div key={order.id} className="order-card">
                     <div className="order-card__header">
                       <div className="order-card__title">
-                        <span>Заказ #{order.id}</span>
+                        <span>Заказ #{order.orderNumber || String(order.id).slice(0, 8)}</span>
                         <span className={`status status--${order.status}`}>{order.status}</span>
                       </div>
                       <div className="order-card__date">
@@ -288,16 +305,15 @@ const Profile = ({ onLogin, onRegister, onLogout, currentUser }) => {
                       )}
                     </div>
                     <div className="order-card__total">
-                      Итого: <span className="order-total">{formatUsd(
-                        order.currency !== 'USD' && order.items?.length && order.items.every((item) => String(item.id).startsWith('product-'))
-                          ? rubToUsd(order.total)
-                          : order.total
-                      )}</span>
+                      Итого: <span className="order-total">{formatUsd(order.total)}</span>
                     </div>
-                    {['Ожидание', 'В работе'].includes(order.status) && (
+                    {order.status === 'Новый' && (
                       <button type="button" className="btn-outline" onClick={() => cancelOrder(order.id)}>Отменить заказ</button>
                     )}
-                    {order.status === 'Завершена' && <ReviewForm orderId={order.id} />}
+                    {order.statusHistory?.length > 0 && <details className="order-status-history"><summary>История статусов</summary>{order.statusHistory.map((item, index) => <p key={`${item.createdAt}-${index}`}>{item.label || item.status} · {new Date(item.createdAt).toLocaleString('ru-RU')}{item.reason ? ` · ${item.reason}` : ''}</p>)}</details>}
+                    {order.status === 'Выполнен' && order.items?.map((item) => item.hasReview
+                      ? <p className="profile-review-form" key={item.id}>Отзыв на «{item.title}» уже отправлен. После модерации он появится на сайте.</p>
+                      : <ReviewForm key={item.id} orderId={order.id} productId={item.id} productTitle={item.title} />)}
                   </div>
                 ))}
               </div>

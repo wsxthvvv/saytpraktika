@@ -4,19 +4,34 @@ const escapeHtml = (value) => String(value ?? '')
   .replace(/>/g, '&gt;');
 
 const formatLeadMessage = (payload) => {
+  const isOrder = payload.type === 'order';
   const lines = [
-    `<b>Новая заявка с сайта 01service</b>`,
-    `Тип: ${escapeHtml(payload.type || 'lead')}`,
+    isOrder
+      ? `<b>Новый заказ №${escapeHtml(payload.orderNumber || '')} с сайта 01service</b>`
+      : `<b>Новая заявка №${escapeHtml(payload.leadNumber || '')} ${payload.source === 'telegram' ? 'из Telegram' : 'с сайта 01service'}</b>`,
   ];
 
   if (payload.name) lines.push(`Имя: ${escapeHtml(payload.name)}`);
+  if (!isOrder && payload.topic) lines.push(`Тема: ${escapeHtml(payload.topic)}`);
   if (payload.phone) lines.push(`Телефон: ${escapeHtml(payload.phone)}`);
   if (payload.email) lines.push(`Email: ${escapeHtml(payload.email)}`);
   if (payload.address) lines.push(`Адрес: ${escapeHtml(payload.address)}`);
   if (payload.deliveryDate) lines.push(`Дата доставки: ${escapeHtml(payload.deliveryDate)}`);
   if (payload.deliveryTime) lines.push(`Время: ${escapeHtml(payload.deliveryTime)}`);
   if (payload.comments) lines.push(`Комментарий: ${escapeHtml(payload.comments)}`);
-  if (payload.total != null) lines.push(`Сумма заказа: ${escapeHtml(String(payload.total))}`);
+  if (payload.total != null) {
+    const total = Number(payload.total);
+    const formattedTotal = Number.isFinite(total)
+      ? `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
+      : escapeHtml(String(payload.total));
+    lines.push(`${isOrder ? 'Итого' : 'Сумма'}: ${formattedTotal}`);
+  }
+  if (isOrder && payload.shippingFee != null) {
+    const shippingFee = Number(payload.shippingFee);
+    if (Number.isFinite(shippingFee)) {
+      lines.push(`Доставка: $${shippingFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`);
+    }
+  }
   if (payload.itemsSummary) lines.push(`Состав: ${escapeHtml(payload.itemsSummary)}`);
 
   lines.push(`Время: ${escapeHtml(new Date().toISOString())}`);
@@ -31,24 +46,29 @@ const sendTelegram = async (text) => {
     return { channel: 'telegram', ok: false, skipped: true, reason: 'missing_env' };
   }
 
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: 'HTML',
-      disable_web_page_preview: true,
-    }),
-  });
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      signal: AbortSignal.timeout(8000),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+      }),
+    });
 
-  const data = await response.json().catch(() => ({}));
-  return {
-    channel: 'telegram',
-    ok: response.ok && data.ok,
-    status: response.status,
-    error: data.description,
-  };
+    const data = await response.json().catch(() => ({}));
+    return {
+      channel: 'telegram',
+      ok: response.ok && data.ok,
+      status: response.status,
+      error: data.description,
+    };
+  } catch (error) {
+    return { channel: 'telegram', ok: false, error: error?.name === 'TimeoutError' ? 'timeout' : 'request_failed' };
+  }
 };
 
 const sendMaxWebhook = async (payload, text) => {
@@ -62,21 +82,27 @@ const sendMaxWebhook = async (payload, text) => {
   const headers = { 'Content-Type': 'application/json' };
   if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
 
-  const response = await fetch(webhookUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      source: '01service',
-      text,
-      payload,
-    }),
-  });
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      signal: AbortSignal.timeout(8000),
+      headers,
+      body: JSON.stringify({
+        source: '01service',
+        text,
+        payload,
+      }),
+    });
 
-  return {
-    channel: 'max',
-    ok: response.ok,
-    status: response.status,
-  };
+    return {
+      channel: 'max',
+      ok: response.ok,
+      status: response.status,
+      error: response.ok ? undefined : `HTTP ${response.status}`,
+    };
+  } catch (error) {
+    return { channel: 'max', ok: false, error: error?.name === 'TimeoutError' ? 'timeout' : 'request_failed' };
+  }
 };
 
 const notifyLead = async (payload) => {

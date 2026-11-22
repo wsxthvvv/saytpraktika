@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import BrandLogo from './BrandLogo';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 const Footer = () => {
+  const { contacts } = useSiteSettings();
   return (
     <footer className="footer">
       <div className="container">
@@ -38,14 +40,14 @@ const Footer = () => {
                 <span className="contact-icon">📞</span>
                 <div>
                   <div>Телефон:</div>
-                  <a href="tel:+79037644698">+7 903 764 46 98</a>
+                  <a href={`tel:${(contacts.phone || '+7 903 764 46 98').replace(/[^+\d]/g, '')}`}>{contacts.phone || '+7 903 764 46 98'}</a>
                 </div>
               </div>
               <div className="contact-item">
                 <span className="contact-icon">✉️</span>
                 <div>
                   <div>Email:</div>
-                  <a href="mailto:5421062@mail.ru">5421062@mail.ru</a>
+                  <a href={`mailto:${contacts.email}`}>{contacts.email}</a>
                 </div>
               </div>
             </div>
@@ -73,7 +75,7 @@ const Footer = () => {
             <h4>Быстрые ссылки</h4>
             <ul className="footer-links">
               <li><Link to="/services">Услуги разработки</Link></li>
-              <li><Link to="/mining">Каталог оборудования</Link></li>
+              <li><Link to="/products?category=miner">Майнинг-оборудование</Link></li>
               <li><Link to="/crypto">Конвертер криптовалют</Link></li>
               <li><Link to="/news">Новости</Link></li>
               <li><Link to="/profile">Личный кабинет</Link></li>

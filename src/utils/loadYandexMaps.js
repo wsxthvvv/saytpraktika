@@ -1,18 +1,30 @@
 const SCRIPT_ID = 'yandex-maps-api';
+const LOAD_TIMEOUT_MS = 8000;
 
 export function loadYandexMaps() {
   return new Promise((resolve, reject) => {
-    if (window.ymaps?.ready) {
-      window.ymaps.ready(() => resolve(window.ymaps));
-      return;
-    }
+    let settled = false;
+    const timeout = window.setTimeout(() => fail(new Error('yandex_maps_timeout')), LOAD_TIMEOUT_MS);
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      callback(value);
+    };
+    const fail = (error) => finish(reject, error);
+    const ready = () => {
+      if (!window.ymaps?.ready) return fail(new Error('yandex_maps_not_ready'));
+      try { window.ymaps.ready(() => finish(resolve, window.ymaps)); }
+      catch (error) { fail(error); }
+    };
+
+    if (window.ymaps?.ready) return ready();
 
     const existing = document.getElementById(SCRIPT_ID);
     if (existing) {
-      existing.addEventListener('load', () => {
-        window.ymaps.ready(() => resolve(window.ymaps));
-      }, { once: true });
-      existing.addEventListener('error', () => reject(new Error('yandex_maps_load_failed')), { once: true });
+      existing.addEventListener('load', ready, { once: true });
+      existing.addEventListener('error', () => fail(new Error('yandex_maps_load_failed')), { once: true });
+      if (window.ymaps?.ready) ready();
       return;
     }
 
@@ -26,10 +38,8 @@ export function loadYandexMaps() {
     script.id = SCRIPT_ID;
     script.src = url;
     script.async = true;
-    script.onload = () => {
-      window.ymaps.ready(() => resolve(window.ymaps));
-    };
-    script.onerror = () => reject(new Error('yandex_maps_load_failed'));
+    script.onload = ready;
+    script.onerror = () => fail(new Error('yandex_maps_load_failed'));
     document.head.appendChild(script);
   });
 }

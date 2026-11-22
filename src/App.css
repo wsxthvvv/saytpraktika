@@ -1342,6 +1342,16 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   color: var(--text);
 }
+.rates-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.rates-panel__heading .rates-panel__title { margin-bottom: 0.25rem; }
+.rates-panel__updated { margin: 0; color: var(--text-muted); font-size: 0.78rem; }
+.rates-panel__refresh { padding: 0.45rem 0.75rem; white-space: nowrap; }
 .rates-panel__title {
   margin: 0;
   font-size: 1.3rem;

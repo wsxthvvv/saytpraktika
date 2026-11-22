@@ -1,17 +1,20 @@
 import { formatUsd } from '../utils/currency';
 
-export const ORDER_STATUSES = ['Ожидание', 'В работе', 'Завершена', 'Отменена'];
+export const ORDER_STATUSES = ['Новый', 'Подтверждён', 'Ожидает оплаты', 'Оплачен', 'Собирается', 'Передан в доставку', 'Выполнен', 'Отменён покупателем', 'Отменён администратором'];
 export const LEAD_STATUSES = ['Новая', 'В работе', 'Завершена', 'Отменена'];
-export const REVIEW_STATUSES = ['pending', 'approved', 'rejected'];
+export const REVIEW_STATUSES = ['pending', 'approved', 'rejected', 'hidden', 'deleted'];
 
 export const reviewLabels = {
   pending: 'На проверке',
   approved: 'Опубликован',
   rejected: 'Отклонён',
+  hidden: 'Скрыт',
+  deleted: 'Удалён',
 };
 
 export const LEAD_TYPE_LABELS = {
   service: 'Услуга',
+  telegram_service: 'Услуга из Telegram',
   callback: 'Обратный звонок',
   order: 'Заказ с сайта',
   lead: 'Заявка',
@@ -78,14 +81,18 @@ export const LEAD_STATUS_OPTIONS = [
 
 export const ORDER_STATUS_OPTIONS = [
   { value: 'all', label: 'Все статусы' },
-  { value: 'pending', label: 'Ожидание' },
-  { value: 'processing', label: 'В работе' },
-  { value: 'completed', label: 'Завершена' },
-  { value: 'cancelled', label: 'Отменена' },
+  { value: 'pending', label: 'Новый' },
+  { value: 'confirmed', label: 'Подтверждён' },
+  { value: 'awaiting_payment', label: 'Ожидает оплаты' },
+  { value: 'paid', label: 'Оплачен' },
+  { value: 'assembling', label: 'Собирается' },
+  { value: 'shipped', label: 'Передан в доставку' },
+  { value: 'completed', label: 'Выполнен' },
+  { value: 'cancelled_admin', label: 'Отменён администратором' },
+  { value: 'cancelled_customer', label: 'Отменён покупателем' },
 ];
 
 export const syncAdminSessionToProfile = (user) => {
   if (!user) return;
-  localStorage.setItem('currentUser', JSON.stringify(user));
-  window.dispatchEvent(new Event('userUpdated'));
+  window.dispatchEvent(new CustomEvent('userUpdated', { detail: user }));
 };

@@ -93,6 +93,7 @@ const Auth = ({ onLogin, onRegister }) => {
           fullName,
 
           phone: formattedPhone || null,
+          consent: true,
 
         });
 

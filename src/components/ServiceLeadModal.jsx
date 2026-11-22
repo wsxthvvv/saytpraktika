@@ -15,22 +15,30 @@ const ServiceLeadModal = ({ service, onClose }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!phone.trim() && !email.trim()) {
+      setDone({ error: 'Укажите телефон или email, чтобы менеджер мог связаться с вами.' });
+      return;
+    }
     if (!pdConsent) {
       setPdError('Необходимо дать согласие на обработку персональных данных');
       return;
     }
+    setDone(null);
     setPdError('');
     setBusy(true);
     const result = await submitLead({
       type: 'service',
+      topic: service?.title || 'Консультация по услуге',
       name: name.trim(),
       phone: formatRussianPhone(phone),
       email: email.trim(),
       comments: comments.trim() || undefined,
       itemsSummary: service?.title ? `Услуга: ${service.title}` : undefined,
+      consent: true,
     });
     setBusy(false);
-    setDone(result);
+    if (result.stored) setDone(result);
+    else setDone({ error: result.error || 'Не удалось сохранить заявку. Проверьте соединение и попробуйте ещё раз.' });
   };
 
   if (!service) return null;
@@ -47,21 +55,22 @@ const ServiceLeadModal = ({ service, onClose }) => {
             ✕
           </button>
         </div>
-        {done ? (
+        {done && done.stored ? (
           <div className="service-lead-modal__body service-lead-modal__success" role="status">
             <p>
               {done.delivered
                 ? 'Заявка отправлена руководителю. Мы свяжемся с вами в рабочее время.'
                 : done.stored
-                  ? 'Заявка сохранена. Менеджер увидит её в системе и свяжется с вами.'
-                  : 'Заявка сохранена на устройстве и будет отправлена при подключении сервера. Срочно: +7 903 764 46 98, 5421062@mail.ru.'}
+                  ? `Заявка №${done.leadNumber || done.leadId || '—'} сохранена. Менеджер свяжется с вами.`
+                  : 'Не удалось отправить заявку. Проверьте соединение и повторите попытку.'}
             </p>
             <button type="button" className="btn" onClick={onClose}>Закрыть</button>
           </div>
         ) : (
           <form className="service-lead-modal__body service-lead-modal__form" onSubmit={handleSubmit}>
+            {done?.error && <p className="contact-widget__error" role="alert">{done.error}</p>}
             <p className="service-lead-modal__hint">
-              Заявка уйдёт менеджеру в Telegram. Оборудование для майнинга оформляется через корзину.
+              Оставьте телефон или email. Заявка сохранится в системе и будет передана менеджеру. Оборудование для майнинга оформляется через корзину.
             </p>
             <div className="service-lead-modal__fields">
               <label className="service-lead-modal__field service-lead-modal__field--full">
@@ -75,12 +84,11 @@ const ServiceLeadModal = ({ service, onClose }) => {
                 />
               </label>
               <label className="service-lead-modal__field">
-                <span className="service-lead-modal__label">Телефон *</span>
+                <span className="service-lead-modal__label">Телефон</span>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  required
                   placeholder="+7 900 000 00 00"
                   autoComplete="tel"
                 />

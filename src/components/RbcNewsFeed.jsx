@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link } from 'react-router-dom';
 
-import { FALLBACK_NEWS, fetchRbcNews, REFRESH_INTERVAL_MS } from '../data/rbcNews';
+import { fetchRbcNews, REFRESH_INTERVAL_MS } from '../data/rbcNews';
 
 
 
@@ -38,7 +38,7 @@ const DEFAULT_PAGE_LIMIT = 24;
 
 const RbcNewsFeed = ({ limit, preview = false, lazyWhenPreview = false }) => {
 
-  const [news, setNews] = useState(FALLBACK_NEWS);
+  const [news, setNews] = useState([]);
 
   const [status, setStatus] = useState('idle');
 
@@ -104,7 +104,7 @@ const RbcNewsFeed = ({ limit, preview = false, lazyWhenPreview = false }) => {
 
         && items.every((item) => String(item.id).startsWith('rbc-fallback'));
 
-      setStatus(isFallback ? 'fallback' : 'ready');
+      setStatus(isFallback ? 'fallback' : items.length ? 'ready' : 'error');
 
     } catch (error) {
 
@@ -228,9 +228,9 @@ const RbcNewsFeed = ({ limit, preview = false, lazyWhenPreview = false }) => {
 
             {status === 'fallback'
 
-              ? 'Полная лента новостей доступна при работающем API (локально: npm run server; на проде — деплой backend с маршрутом /api/rbc-news). Сейчас показаны 3 резервные карточки — нажмите «Обновить» после запуска сервера.'
+              ? 'Лента новостей временно недоступна. На сайте не показываются непроверенные материалы; попробуйте обновить позже.'
 
-              : 'Показана резервная крипто-подборка РБК. Не удалось получить свежую ленту, попробуйте обновить страницу позже.'}
+              : 'Не удалось получить свежую ленту РБК. Попробуйте обновить страницу позже.'}
 
           </div>
 

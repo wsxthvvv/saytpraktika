@@ -2,6 +2,11 @@ const fs = require('fs');
 const path = require('path');
 
 const BUILD_DIR = path.join(__dirname, '..', 'build');
+const SPA_ROUTES = [
+  /^\/$/,
+  /^\/(?:services|products|crypto|profile|cart|news|privacy|consent|mining|charts|admin)\/?$/,
+  /^\/(?:products|mining)\/[^/]+\/?$/,
+];
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -28,8 +33,9 @@ const buildExists = () => fs.existsSync(path.join(BUILD_DIR, 'index.html'));
 
 const safeResolve = (urlPath) => {
   const relative = urlPath === '/' ? 'index.html' : urlPath.replace(/^\/+/, '');
-  const resolved = path.normalize(path.join(BUILD_DIR, relative));
-  if (!resolved.startsWith(BUILD_DIR)) return null;
+  const resolved = path.resolve(BUILD_DIR, relative);
+  const fromBuild = path.relative(BUILD_DIR, resolved);
+  if (fromBuild === '..' || fromBuild.startsWith(`..${path.sep}`) || path.isAbsolute(fromBuild)) return null;
   return resolved;
 };
 
@@ -43,7 +49,7 @@ const sendFile = (res, filePath, statusCode = 200) => {
 /**
  * @returns {boolean} true if request handled
  */
-const tryServeStatic = (req, res) => {
+const tryServeStatic = (req, res, spaFallbackStatus = 200) => {
   if (!isProductionStaticEnabled() || !buildExists()) return false;
   if (req.method !== 'GET' && req.method !== 'HEAD') return false;
 
@@ -67,12 +73,18 @@ const tryServeStatic = (req, res) => {
     return true;
   }
 
+  if (!SPA_ROUTES.some((route) => route.test(pathname))) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Страница не найдена');
+    return true;
+  }
+
   const spaIndex = path.join(BUILD_DIR, 'index.html');
   if (req.method === 'HEAD') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(spaFallbackStatus, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end();
   } else {
-    sendFile(res, spaIndex);
+    sendFile(res, spaIndex, spaFallbackStatus);
   }
   return true;
 };

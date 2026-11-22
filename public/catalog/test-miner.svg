@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-labelledby="title desc">
+  <title id="title">Тестовый ASIC-майнер</title>
+  <desc id="desc">Иллюстрация тестовой карточки оборудования</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#101827"/>
+      <stop offset="1" stop-color="#273b5c"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef3fb"/>
+      <stop offset="1" stop-color="#aebbd0"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="520" rx="34" fill="url(#bg)"/>
+  <circle cx="650" cy="90" r="120" fill="#38d39f" opacity=".12"/>
+  <rect x="118" y="142" width="564" height="238" rx="26" fill="url(#body)"/>
+  <rect x="148" y="172" width="504" height="178" rx="17" fill="#1a2434"/>
+  <g fill="#7e8ca1">
+    <rect x="180" y="203" width="438" height="9" rx="4"/>
+    <rect x="180" y="232" width="438" height="9" rx="4"/>
+    <rect x="180" y="261" width="438" height="9" rx="4"/>
+    <rect x="180" y="290" width="438" height="9" rx="4"/>
+  </g>
+  <circle cx="202" cy="326" r="11" fill="#38d39f"/>
+  <circle cx="236" cy="326" r="11" fill="#f4bb54"/>
+  <text x="400" y="93" text-anchor="middle" fill="#dce8f7" font-family="Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="4">TEST CATALOG</text>
+  <text x="400" y="430" text-anchor="middle" fill="#9fb2cd" font-family="Arial, sans-serif" font-size="20">Тестовая карточка · не для заказа</text>
+</svg>

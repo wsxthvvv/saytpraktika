@@ -23,7 +23,7 @@ export const toSessionUser = (user) => (user ? { ...user } : null);
 export async function registerUser(userFields) {
   return request('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ ...userFields, email: normalizeEmail(userFields.email) }),
+    body: JSON.stringify({ ...userFields, email: normalizeEmail(userFields.email), consent: true }),
   });
 }
 
@@ -55,10 +55,10 @@ export async function persistSessionProfile(sessionUser) {
   });
 }
 
-export async function changePassword(currentPassword, newPassword) {
+export async function changePassword(currentPassword, newPassword, confirmPassword) {
   return request('/api/auth/password', {
     method: 'POST',
-    body: JSON.stringify({ currentPassword, newPassword }),
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
   });
 }
 

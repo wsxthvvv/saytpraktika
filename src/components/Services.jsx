@@ -1,19 +1,22 @@
 // src/components/Services.jsx
 import React, { useState } from 'react';
-import { formatUsd, formatRubPriceAsUsd, rubToUsd } from '../utils/currency';
 import Testimonials from './Testimonials';
-import ServiceLeadModal from './ServiceLeadModal';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
+import serviceCatalog from '../data/serviceCatalog.json';
+
+const SERVICE_TITLES = new Map(serviceCatalog.map((service) => [service.id, service.title]));
 
 const Services = () => {
+  const { contacts } = useSiteSettings();
   const [selectedService, setSelectedService] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [leadService, setLeadService] = useState(null);
+  const [botNotice, setBotNotice] = useState('');
 
   const services = [
     {
       id: 1,
-      title: 'Frontend разработка (React)',
-      price: 75000, 
+      title: SERVICE_TITLES.get(1),
+      price: null,
       description: 'Разработка современных веб-приложений на React с TypeScript и современным стеком технологий.',
       category: 'frontend',
       deliverables: [
@@ -23,12 +26,7 @@ const Services = () => {
         'Интеграция с API',
         'Тестирование'
       ],
-      pricing: [
-        { type: 'Junior Developer', rate: '7 500 ₽/час' },
-        { type: 'Middle Developer', rate: '15 000 ₽/час' },
-        { type: 'Senior Developer', rate: '25 000 ₽/час' },
-        { type: 'Фиксированный проект', rate: '30 000 – 60 000 ₽' }
-      ],
+      pricing: [],
       badge: 'REACT EXPERT',
       details: {
         technologies: ['React', 'TypeScript', 'Redux', 'Next.js', 'Vite'],
@@ -51,8 +49,8 @@ const Services = () => {
     },
     {
       id: 2,
-      title: 'Верстка сайтов',
-      price: 30000,
+      title: SERVICE_TITLES.get(2),
+      price: null,
       description: 'Качественная адаптивная верстка по макетам с соблюдением стандартов и кроссбраузерности.',
       category: 'frontend',
       deliverables: [
@@ -62,12 +60,7 @@ const Services = () => {
         'Оптимизация скорости',
         'SEO-верстка'
       ],
-      pricing: [
-        { type: 'Лендинг', rate: '10 000 ₽' },
-        { type: 'Многостраничный сайт', rate: '10 000 ₽/страница' },
-        { type: 'Адаптивный дизайн', rate: '50 000 ₽/страница' },
-        { type: 'Поддержка', rate: '4 000 ₽/час' }
-      ],
+      pricing: [],
       badge: 'PIXEL PERFECT',
       details: {
         technologies: ['HTML5', 'CSS3', 'JavaScript', 'SASS/SCSS', 'Bootstrap'],
@@ -90,8 +83,8 @@ const Services = () => {
     },
     {
       id: 3,
-      title: 'UI/UX дизайн',
-      price: 75000,
+      title: SERVICE_TITLES.get(3),
+      price: null,
       description: 'Создание интуитивных и эстетичных интерфейсов с продуманным пользовательским опытом.',
       category: 'design',
       deliverables: [
@@ -101,11 +94,7 @@ const Services = () => {
         'UI Design System',
         'Design Handoff'
       ],
-      pricing: [
-        { type: 'Концепция UI/UX', rate: '50 000 ₽' },
-        { type: 'Прототипы', rate: '100 000 ₽' },
-        { type: 'Дизайн интерфейса', rate: '70 000 ₽' }
-      ],
+      pricing: [],
       badge: 'UX CERTIFIED',
       details: {
         technologies: ['Figma', 'Adobe XD', 'Sketch', 'InVision', 'Principle'],
@@ -128,8 +117,8 @@ const Services = () => {
     },
     {
       id: 4,
-      title: 'Backend разработка (Python/Django)',
-      price: 150000, 
+      title: SERVICE_TITLES.get(4),
+      price: null,
       description: 'Разработка надежных бэкенд-систем на Python/Django с REST API и оптимизированной базой данных.',
       category: 'backend',
       deliverables: [
@@ -139,12 +128,7 @@ const Services = () => {
         'Документация',
         'Deployment'
       ],
-      pricing: [
-        { type: 'Junior Developer', rate: '14 000 ₽/час' },
-        { type: 'Middle Developer', rate: '28 000 ₽/час' },
-        { type: 'Senior Developer', rate: '45 000 ₽/час' },
-        { type: 'Фиксированный проект', rate: '70 000 – 200 000 ₽' }
-      ],
+      pricing: [],
       badge: 'PYTHON/DJANGO',
       details: {
         technologies: ['Python', 'Django', 'PostgreSQL', 'Redis'],
@@ -167,8 +151,8 @@ const Services = () => {
     },
     {
       id: 5,
-      title: 'API разработка',
-      price: 120000,
+      title: SERVICE_TITLES.get(5),
+      price: null,
       description: 'Проектирование и разработка RESTful API с документацией, тестированием и безопасностью.',
       category: 'backend',
       deliverables: [
@@ -178,11 +162,7 @@ const Services = () => {
         'Rate limiting',
         'API testing'
       ],
-      pricing: [
-        { type: 'Проектирование БД', rate: '50 000 – 120 000 ₽' },
-        { type: 'Оптимизация БД', rate: '35 000 ₽/час' },
-        { type: 'Senior Developer', rate: '50 000 ₽/час' }
-      ],
+      pricing: [],
       badge: 'API SPECIALIST',
       details: {
         technologies: ['REST', 'Swagger', 'JWT', 'OAuth2'],
@@ -205,8 +185,8 @@ const Services = () => {
     },
     {
       id: 6,
-      title: 'Администрирование БД',
-      price: 80000, 
+      title: SERVICE_TITLES.get(6),
+      price: null,
       description: 'Профессиональное администрирование и оптимизация баз данных для высоконагруженных проектов.',
       category: 'backend',
       deliverables: [
@@ -216,9 +196,7 @@ const Services = () => {
         'Репликация',
         'Миграции'
       ],
-      pricing: [
-        { type: 'Абонентское обслуживание', rate: '50 000 – 150 000 ₽/мес' }
-      ],
+      pricing: [],
       badge: 'DBA EXPERT',
       details: {
         technologies: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis'],
@@ -241,8 +219,8 @@ const Services = () => {
     },
     {
       id: 7,
-      title: 'Full-stack разработка',
-      price: 250000,
+      title: SERVICE_TITLES.get(7),
+      price: null,
       description: 'Комплексная разработка от фронтенда до бэкенда с полным циклом проектирования и реализации.',
       category: 'fullstack',
       deliverables: [
@@ -252,10 +230,7 @@ const Services = () => {
         'Code review',
         'Техническая поддержка'
       ],
-      pricing: [
-        { type: 'Команда разработки', rate: 'Индивидуальный расчет' },
-        { type: 'Технический аудит', rate: '25 000 ₽' }
-      ],
+      pricing: [],
       badge: 'FULL STACK',
       details: {
         technologies: ['React', 'Node.js', 'Python', 'Docker', 'AWS'],
@@ -278,8 +253,8 @@ const Services = () => {
     },
     {
       id: 8,
-      title: 'Техническая консультация',
-      price: 15000,
+      title: SERVICE_TITLES.get(8),
+      price: null,
       description: 'Экспертная консультация по архитектуре, технологическому стеку и оптимизации проектов.',
       category: 'consulting',
       deliverables: [
@@ -289,10 +264,7 @@ const Services = () => {
         'Рекомендации по стеку',
         'Roadmap'
       ],
-      pricing: [
-        { type: 'Консультация', rate: '15 000 ₽/час' },
-        { type: 'Технический аудит', rate: '25 000 ₽' }
-      ],
+      pricing: [],
       badge: 'TECH ADVISOR',
       details: {
         technologies: ['Архитектура', 'Best Practices', 'Code Review', 'DevOps'],
@@ -325,11 +297,23 @@ const Services = () => {
     setSelectedService(null);
   };
 
-  const formatMainPrice = (price) => {
-    const usdPrice = rubToUsd(price);
-    if (usdPrice >= 1000000) return `$${Math.round(usdPrice / 1000000)}M`;
-    if (usdPrice >= 1000) return `$${Math.round(usdPrice / 1000)}K`;
-    return formatUsd(usdPrice);
+  const telegramServiceUrl = (service) => {
+    const base = contacts.telegramBotUrl || '';
+    if (!base) return '';
+    try {
+      const url = new URL(base);
+      if (url.hostname !== 't.me') return '';
+      url.searchParams.set('start', `service_${service.id}`);
+      return url.toString();
+    } catch {
+      return '';
+    }
+  };
+
+  const openTelegram = (service) => {
+    const url = telegramServiceUrl(service);
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    else setBotNotice('Ссылка на Telegram-бота пока не настроена. Укажите её в админ-панели в разделе «Контакты и доставка».');
   };
 
   return (
@@ -340,12 +324,9 @@ const Services = () => {
           <h2 className="section-title">Профессиональные услуги разработки</h2>
           <p className="services-subtitle">
             Полный цикл разработки: от UI/UX дизайна до высоконагруженных бэкенд-систем.
-            Гибкие модели сотрудничества и гарантия качества.
+            Выберите услугу на сайте, а заявку оформите в Telegram-боте. Состав и стоимость работ согласуем после обсуждения задачи.
           </p>
-        </div>
-        <div className="services-highlight">
-          <span className="services-highlight__tag">Скидка 10% на первый проект</span>
-          <p>При заказе от 2 услуг — специальные условия и приоритетная поддержка.</p>
+          {botNotice && <p className="catalog-notice" role="status">{botNotice}</p>}
         </div>
       </div>
 
@@ -356,9 +337,7 @@ const Services = () => {
             <header className="service-card__header">
               <h3>{service.title}</h3>
             </header>
-            <div className="service-card__price-main">
-              от {formatMainPrice(service.price)}
-            </div>
+            <div className="service-card__price-main">Стоимость — после обсуждения задачи</div>
             <p className="service-card__description">{service.description}</p>
             <div className="service-card__deliverables">
               <h4>ЧТО ВХОДИТ:</h4>
@@ -366,24 +345,9 @@ const Services = () => {
                 {service.deliverables.map((item, i) => <li key={i}>{item}</li>)}
               </ul>
             </div>
-            <div className="service-card__pricing">
-              <h4>СТОИМОСТЬ:</h4>
-              <div className="pricing-list">
-                {service.pricing.map((item, i) => (
-                  <div key={i} className="pricing-item">
-                    <span className="pricing-label">{item.type}</span>
-                    <span className="pricing-value">{formatRubPriceAsUsd(item.rate)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
             <div className="service-card__actions">
-              <button
-                type="button"
-                className="btn service-card__action"
-                onClick={() => setLeadService(service)}
-              >
-                Оставить заявку
+              <button type="button" className="btn service-card__action" onClick={() => openTelegram(service)}>
+                Оформить в Telegram
               </button>
               <button
                 type="button"
@@ -446,28 +410,15 @@ const Services = () => {
                     ))}
                   </div>
                 </div>
-                <div className="details-section">
-                  <h3>💰 Стоимость</h3>
-                  <div className="detailed-pricing">
-                    {selectedService.pricing.map((p, i) => (
-                      <div key={i} className="pricing-detail">
-                        <span className="pricing-type">{p.type}</span>
-                    <span className="pricing-rate">{formatRubPriceAsUsd(p.rate)}</span>
-                      </div>
-                    ))}
+                  <div className="details-section">
+                    <h3>Стоимость</h3>
+                    <p>Стоимость работ рассчитывается после обсуждения задачи и состава работ.</p>
                   </div>
-                </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button
-                className="btn btn--large modal-order-btn"
-                onClick={() => {
-                  setLeadService(selectedService);
-                  closeDetails();
-                }}
-              >
-                Оставить заявку
+              <button className="btn btn--large modal-order-btn" onClick={() => { openTelegram(selectedService); closeDetails(); }}>
+                Оформить в Telegram
               </button>
               <button className="btn-outline" onClick={closeDetails}>
                 Закрыть
@@ -478,9 +429,6 @@ const Services = () => {
       )}
     </section>
     <Testimonials subtitle="Отзывы о разработке и IT-сервисе" />
-    {leadService && (
-      <ServiceLeadModal service={leadService} onClose={() => setLeadService(null)} />
-    )}
     </>
   );
 };

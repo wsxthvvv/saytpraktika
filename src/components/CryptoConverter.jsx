@@ -2,31 +2,54 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useCryptoRates } from '../contexts/CryptoRatesContext';
 
 const CryptoConverter = () => {
-  const { simple, loading: ratesLoading } = useCryptoRates();
+  const { simple, markets, loading: ratesLoading, error: ratesError, updatedAt, stale, refresh } = useCryptoRates();
   const cryptoRates = useMemo(() => simple || {}, [simple]);
-  const [fiatRate, setFiatRate] = useState(90);
+  const [fiatRate, setFiatRate] = useState(null);
   const [fromAmount, setFromAmount] = useState(1);
   const [fromCurrency, setFromCurrency] = useState('USD');
   const [toCurrency, setToCurrency] = useState('BTC');
   const [result, setResult] = useState(0);
   const [fiatLoading, setFiatLoading] = useState(true);
+  const [fiatUnavailable, setFiatUnavailable] = useState(false);
+  const [fiatUpdatedAt, setFiatUpdatedAt] = useState(null);
 
-  const currencies = [
+  const baseCurrencies = [
     { code: 'USD', name: 'US Dollar', symbol: '$', type: 'fiat' },
     { code: 'RUB', name: 'Russian Ruble', symbol: 'RUB', type: 'fiat' },
-    { code: 'BTC', name: 'Bitcoin', symbol: '₿', type: 'crypto', id: 'bitcoin' },
-    { code: 'ETH', name: 'Ethereum', symbol: 'Ξ', type: 'crypto', id: 'ethereum' },
   ];
+  const cryptoCurrencies = markets.length
+    ? [...new Map(markets.filter((market) => market.symbol).map((market) => [String(market.symbol).toUpperCase(), {
+      code: String(market.symbol).toUpperCase(), name: market.name, symbol: String(market.symbol).toUpperCase(), type: 'crypto', id: market.id,
+    }])).values()]
+    : [
+      { code: 'BTC', name: 'Bitcoin', symbol: 'BTC', type: 'crypto', id: 'bitcoin' },
+      { code: 'ETH', name: 'Ethereum', symbol: 'ETH', type: 'crypto', id: 'ethereum' },
+    ];
+  const currencies = [...baseCurrencies, ...cryptoCurrencies.filter((currency) => !['USD', 'RUB'].includes(currency.code))];
+  const currencyRates = useMemo(() => {
+    const rates = { USD: 1 };
+    if (fiatRate > 0) rates.RUB = 1 / fiatRate;
+    markets.forEach((market) => {
+      const code = String(market.symbol || '').toUpperCase();
+      const price = Number(market.current_price);
+      if (code && Number.isFinite(price) && price > 0) rates[code] = price;
+    });
+    if (cryptoRates.bitcoin?.usd) rates.BTC = Number(cryptoRates.bitcoin.usd);
+    if (cryptoRates.ethereum?.usd) rates.ETH = Number(cryptoRates.ethereum.usd);
+    return rates;
+  }, [markets, fiatRate, cryptoRates]);
 
   const fetchFiatRate = async () => {
     try {
-      const res = await fetch('https://open.er-api.com/v6/latest/USD');
-      const data = await res.json();
-      if (data.rates?.RUB) {
-        setFiatRate(data.rates.RUB);
-      }
-    } catch (err) {
-      console.error('Ошибка загрузки курса USD/RUB:', err);
+      const res = await fetch('/api/crypto/fx', { signal: AbortSignal.timeout(10000) });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok && Number.isFinite(Number(data.rate))) {
+        setFiatRate(Number(data.rate));
+        setFiatUpdatedAt(data.updatedAt || new Date().toISOString());
+        setFiatUnavailable(false);
+      } else if (!data.rate) setFiatUnavailable(true);
+    } catch {
+      setFiatUnavailable(true);
     }
   };
 
@@ -60,25 +83,14 @@ const CryptoConverter = () => {
       setResult(fromAmount);
       return;
     }
-    if (!cryptoRates.bitcoin?.usd || !cryptoRates.ethereum?.usd) {
-      setResult(0);
+    const sourceRate = currencyRates[fromCurrency];
+    const targetRate = currencyRates[toCurrency];
+    if (!(sourceRate > 0) || !(targetRate > 0)) {
+      setResult(null);
       return;
     }
-
-    let usdAmount = 0;
-    if (fromCurrency === 'USD') usdAmount = fromAmount;
-    else if (fromCurrency === 'RUB') usdAmount = fromAmount / fiatRate;
-    else if (fromCurrency === 'BTC') usdAmount = fromAmount * cryptoRates.bitcoin.usd;
-    else if (fromCurrency === 'ETH') usdAmount = fromAmount * cryptoRates.ethereum.usd;
-
-    let finalAmount = 0;
-    if (toCurrency === 'USD') finalAmount = usdAmount;
-    else if (toCurrency === 'RUB') finalAmount = usdAmount * fiatRate;
-    else if (toCurrency === 'BTC') finalAmount = usdAmount / cryptoRates.bitcoin.usd;
-    else if (toCurrency === 'ETH') finalAmount = usdAmount / cryptoRates.ethereum.usd;
-
-    setResult(finalAmount);
-  }, [fromAmount, fromCurrency, toCurrency, cryptoRates, fiatRate]);
+    setResult((fromAmount * sourceRate) / targetRate);
+  }, [fromAmount, fromCurrency, toCurrency, currencyRates]);
 
   const swapCurrencies = () => {
     setFromCurrency(toCurrency);
@@ -133,7 +145,7 @@ const CryptoConverter = () => {
                 ) : (
                   <>
                     <span className="converter-result-value">
-                      {result.toLocaleString('en-US', {
+                      {result == null ? '—' : result.toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 8,
                       })}
@@ -158,7 +170,10 @@ const CryptoConverter = () => {
         </div>
 
         <div className="rates-panel">
-          <h3 className="rates-panel__title">Актуальные курсы</h3>
+          <div className="rates-panel__heading">
+            <div><h3 className="rates-panel__title">Актуальные курсы</h3><p className="rates-panel__updated">{stale ? 'Показаны сохранённые значения' : updatedAt ? `Криптовалюты: ${new Date(updatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : 'Обновляем котировки…'}{fiatUpdatedAt ? ` · USD/RUB: ${new Date(fiatUpdatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : ''}</p></div>
+            <button type="button" className="btn-outline rates-panel__refresh" onClick={() => { refresh(); fetchFiatRate(); }}>Обновить</button>
+          </div>
           <div className="rates-grid">
             <div className="rate-card">
               <div className="rate-card__header">
@@ -186,13 +201,30 @@ const CryptoConverter = () => {
                 <span className="rate-card__name">USD/RUB</span>
               </div>
               <div className="rate-card__price">
-                {loading ? '—' : `1 USD = ${fiatRate?.toFixed(2)} RUB`}
+                {loading || !fiatRate ? '—' : `1 USD = ${fiatRate.toFixed(2)} RUB`}
               </div>
             </div>
           </div>
           <p className="rates-panel__note">
-            Данные обновляются каждую минуту
+            Данные обновляются каждую минуту. Котировки справочные и не являются инвестиционной рекомендацией.
           </p>
+          {fiatUnavailable && <p className="rates-panel__note" role="status">Курс USD/RUB временно недоступен; расчёт с рублём не показывается.</p>}
+          {ratesError && <p className="rates-panel__note" role="status">Источник криптовалют временно недоступен; используются последние сохранённые курсы.</p>}
+          <div className="rates-grid rates-grid--api" aria-label="Курсы криптовалют из API">
+            {markets.slice(0, 10).map((market) => (
+              <div className="rate-card" key={market.id}>
+                <div className="rate-card__header">
+                  <span className="rate-card__name">{market.symbol} · {market.name}</span>
+                </div>
+                <div className="rate-card__price">
+                  {market.current_price == null ? '—' : `$${Number(market.current_price).toLocaleString('en-US')}`}
+                </div>
+                <div className={`rate-card__alt ${Number(market.price_change_percentage_24h) >= 0 ? 'positive' : 'negative'}`}>
+                  {market.price_change_percentage_24h == null ? '—' : `${Number(market.price_change_percentage_24h).toFixed(2)}% за 24 ч.`}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

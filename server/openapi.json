@@ -1,0 +1,63 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "01 SERVICE API",
+    "version": "1.0.0",
+    "description": "API сайта для каталога, заказов, заявок, учётных записей и администрирования. Все ошибки возвращают requestId. Цены заказов передаются и хранятся в USD."
+  },
+  "servers": [{ "url": "/api" }],
+  "paths": {
+    "/health": { "get": { "summary": "Проверить backend, БД и настройки Telegram-уведомлений и бота услуг", "responses": { "200": { "description": "Состояние сервиса" } } } },
+    "/openapi.json": { "get": { "summary": "Получить эту спецификацию OpenAPI", "responses": { "200": { "description": "Спецификация API" } } } },
+    "/crypto/markets": { "get": { "summary": "Получить курсы монет, BTC/USD, ETH/USD, BTC/ETH и время обновления", "responses": { "200": { "description": "CoinGecko или последние значения из кэша; при сбое возвращается stale/error" } } } },
+    "/crypto/asset": { "get": { "summary": "Получить метрики одной монеты с серверным кэшем", "parameters": [{ "name": "asset", "in": "query", "required": true, "schema": { "type": "string" } }, { "name": "currency", "in": "query", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Цена, изменение, объём и капитализация" }, "502": { "$ref": "#/components/responses/ApiError" } } } },
+    "/crypto/chart": { "get": { "summary": "Получить исторические цены с серверным кэшем", "parameters": [{ "name": "asset", "in": "query", "required": true, "schema": { "type": "string" } }, { "name": "currency", "in": "query", "required": true, "schema": { "type": "string" } }, { "name": "days", "in": "query", "required": true, "schema": { "type": "number" } }], "responses": { "200": { "description": "Исторический график" }, "502": { "$ref": "#/components/responses/ApiError" } } } },
+    "/crypto/fx": { "get": { "summary": "Получить справочный курс USD/RUB с кэшем", "responses": { "200": { "description": "Текущий или последний сохранённый курс" } } } },
+    "/rbc-news": { "get": { "summary": "Получить новости крипторынка", "responses": { "200": { "description": "Новости или последнее доступное содержимое кэша" } } } },
+    "/geocode/reverse": { "get": { "summary": "Найти адрес по координатам через Яндекс.Карты", "parameters": [{ "name": "lat", "in": "query", "required": true, "schema": { "type": "number" } }, { "name": "lon", "in": "query", "required": true, "schema": { "type": "number" } }], "responses": { "200": { "description": "Найденный адрес" }, "502": { "$ref": "#/components/responses/ApiError" } } } },
+    "/settings/public": { "get": { "summary": "Получить контакты, ссылку бота услуг, тарифы и интервалы доставки", "responses": { "200": { "description": "Публичные настройки сайта" } } } },
+    "/products": { "get": { "summary": "Получить опубликованный каталог", "parameters": [{ "name": "category", "in": "query", "schema": { "type": "string" } }], "responses": { "200": { "description": "Каталог с доступностью и оценкой" } } } },
+    "/products/{slug}": { "get": { "summary": "Получить опубликованный товар", "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Карточка товара" }, "404": { "$ref": "#/components/responses/ApiError" } } } },
+    "/delivery/quote": { "post": { "summary": "Рассчитать доставку для выбранных товаров и адреса", "responses": { "200": { "description": "Сумма, зона, интервалы и необходимость подтверждения менеджером" }, "400": { "$ref": "#/components/responses/ApiError" } } } },
+    "/auth/register": { "post": { "summary": "Создать покупательский аккаунт; регистрация требует email, телефон и согласие", "responses": { "201": { "description": "Аккаунт создан" }, "400": { "$ref": "#/components/responses/ApiError" }, "429": { "$ref": "#/components/responses/ApiError" } } } },
+    "/auth/login": { "post": { "summary": "Войти по email или логину", "responses": { "200": { "description": "Сессия выдаётся в httpOnly cookie" }, "401": { "$ref": "#/components/responses/ApiError" }, "429": { "$ref": "#/components/responses/ApiError" } } } },
+    "/auth/logout": { "post": { "summary": "Завершить текущую сессию", "responses": { "200": { "description": "Выход выполнен" } } } },
+    "/auth/me": { "get": { "summary": "Получить текущего пользователя", "responses": { "200": { "description": "Сессия и профиль" } } } },
+    "/auth/profile": { "patch": { "summary": "Обновить контактные данные и адрес", "responses": { "200": { "description": "Профиль сохранён" }, "409": { "$ref": "#/components/responses/ApiError" } } } },
+    "/auth/password": { "post": { "summary": "Сменить пароль после проверки текущего и совпадения нового с повтором", "responses": { "200": { "description": "Пароль изменён; остальные сессии закрыты" }, "400": { "$ref": "#/components/responses/ApiError" } } } },
+    "/cart": { "get": { "summary": "Получить корзину аккаунта", "responses": { "200": { "description": "Корзина покупателя" } } }, "put": { "summary": "Сохранить корзину аккаунта с проверкой товаров и остатков", "responses": { "200": { "description": "Обновлённая корзина" }, "400": { "$ref": "#/components/responses/ApiError" } } } },
+    "/cart/merge": { "post": { "summary": "Объединить локальную корзину с корзиной аккаунта", "responses": { "200": { "description": "Объединённая и перепроверенная корзина" } } } },
+    "/orders": { "get": { "summary": "Получить свои заказы", "responses": { "200": { "description": "Заказы и история статусов" } } }, "post": { "summary": "Только покупатель после входа: проверить каталог, остатки, USD-цены и создать заказ", "responses": { "201": { "description": "Заказ создан" }, "401": { "$ref": "#/components/responses/ApiError" }, "409": { "$ref": "#/components/responses/ApiError" } } } },
+    "/orders/{id}": { "get": { "summary": "Получить детали своего заказа или заказа администратору", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Снимок заказа и статусов" }, "404": { "$ref": "#/components/responses/ApiError" } } } },
+    "/orders/{id}/cancel": { "post": { "summary": "Отменить новый заказ покупателя", "responses": { "200": { "description": "Заказ отменён" }, "409": { "$ref": "#/components/responses/ApiError" } } }, "patch": { "summary": "Совместимый метод отмены нового заказа покупателя", "responses": { "200": { "description": "Заказ отменён" }, "409": { "$ref": "#/components/responses/ApiError" } } } },
+    "/reviews": { "get": { "summary": "Получить одобренные отзывы; mine=1 возвращает личные статусы", "responses": { "200": { "description": "Отзывы и агрегаты оценок" } } }, "post": { "summary": "Оставить отзыв к товару из завершённого заказа", "responses": { "201": { "description": "Отзыв отправлен на модерацию" }, "400": { "$ref": "#/components/responses/ApiError" }, "409": { "$ref": "#/components/responses/ApiError" } } } },
+    "/leads": { "post": { "summary": "Сохранить обращение сайта и поставить уведомление в очередь; заявки бота сохраняются внутренним обработчиком", "responses": { "201": { "description": "Обращение сохранено" }, "400": { "$ref": "#/components/responses/ApiError" }, "429": { "$ref": "#/components/responses/ApiError" } } } },
+    "/admin/session": { "get": { "summary": "Проверить сессию администратора", "responses": { "200": { "description": "Состояние административной сессии" } } } },
+    "/admin/dashboard": { "get": { "summary": "Сводка заказов, обращений и отзывов для администратора", "responses": { "200": { "description": "Сводка панели управления" }, "401": { "$ref": "#/components/responses/ApiError" } } } },
+    "/admin/leads": { "get": { "summary": "Поиск и фильтрация обращений", "responses": { "200": { "description": "Список обращений и статусы уведомлений" } } } },
+    "/admin/orders": { "get": { "summary": "Поиск и фильтрация заказов", "responses": { "200": { "description": "Список заказов" } } } },
+    "/admin/orders/{id}": { "patch": { "summary": "Изменить статус заказа; при отмене администратором указать причину", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Статус и история заказа обновлены" }, "409": { "$ref": "#/components/responses/ApiError" } } } },
+    "/admin/reviews": { "get": { "summary": "Список отзывов на модерации и с решением", "responses": { "200": { "description": "Отзывы и статус модерации" } } } },
+    "/admin/reviews/{id}": { "patch": { "summary": "Одобрить, отклонить, скрыть или удалить отзыв", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Решение модерации сохранено" } } } },
+    "/admin/users": { "get": { "summary": "Поиск пользователей и их ролей", "responses": { "200": { "description": "Список пользователей без паролей и сессий" } } } },
+    "/admin/products": { "get": { "summary": "Список товаров, включая скрытые", "responses": { "200": { "description": "Список товаров" } } }, "post": { "summary": "Создать товар или черновик", "responses": { "201": { "description": "Товар создан" }, "400": { "$ref": "#/components/responses/ApiError" } } } },
+    "/admin/products/{id}": { "patch": { "summary": "Изменить карточку товара и публикацию", "responses": { "200": { "description": "Товар обновлён" }, "400": { "$ref": "#/components/responses/ApiError" } } }, "delete": { "summary": "Скрыть товар, сохранив снимки в заказах", "responses": { "200": { "description": "Товар скрыт" } } } },
+    "/admin/users/{id}/status": { "patch": { "summary": "Включить или заблокировать учётную запись", "responses": { "200": { "description": "Статус пользователя изменён" } } } },
+    "/admin/users/{id}/role": { "patch": { "summary": "Изменить роль пользователя", "responses": { "200": { "description": "Роль изменена" }, "409": { "$ref": "#/components/responses/ApiError" } } } },
+    "/admin/leads/{id}/status": { "patch": { "summary": "Изменить статус обращения", "responses": { "200": { "description": "Статус сохранён" } } } },
+    "/admin/orders/{id}/status": { "patch": { "summary": "Перевести заказ в допустимый статус или отменить с причиной", "responses": { "200": { "description": "Статус и история заказа обновлены" }, "409": { "$ref": "#/components/responses/ApiError" } } } },
+    "/admin/reviews/{id}/status": { "patch": { "summary": "Одобрить, отклонить, скрыть или удалить отзыв", "responses": { "200": { "description": "Решение модерации сохранено" } } } },
+    "/admin/settings": { "get": { "summary": "Настройки контактов, тарифов, зон и интервалов доставки", "responses": { "200": { "description": "Настройки панели" } } }, "patch": { "summary": "Сохранить настройки контактов, тарифов и интервалов доставки", "responses": { "200": { "description": "Настройки обновлены" } } } },
+    "/admin/audit": { "get": { "summary": "Журнал административных действий", "responses": { "200": { "description": "Список изменений и requestId" } } } },
+    "/admin/notifications": { "get": { "summary": "Посмотреть очередь уведомлений и ошибки", "responses": { "200": { "description": "Состояние отправки" } } } },
+    "/admin/notifications/{id}/retry": { "post": { "summary": "Повторить отправку уведомления", "responses": { "200": { "description": "Повтор поставлен в очередь" } } } }
+  },
+  "components": {
+    "responses": {
+      "ApiError": {
+        "description": "Ошибка API. Клиенту не передаются SQL-запросы, токены или стек исключения.",
+        "content": { "application/json": { "schema": { "type": "object", "required": ["requestId", "ok", "error"], "properties": { "requestId": { "type": "string" }, "ok": { "const": false }, "code": { "type": "string" }, "error": { "type": "string" } } } } }
+      }
+    }
+  }
+}

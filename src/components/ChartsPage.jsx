@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import '../styles/charts.css';
 import { useNavigate } from 'react-router-dom';
+import { useCryptoRates } from '../contexts/CryptoRatesContext';
 
-const PriceChart = ({ coinId, vsCurrency, days }) => {
+const PriceChart = ({ coinId, vsCurrency, days, refreshToken }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const requestSeqRef = useRef(0);
@@ -12,7 +13,9 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [hoverIndex, setHoverIndex] = useState(null);
   const formatAxisValue = useCallback((value) => {
     const num = Number(value || 0);
     if (vsCurrency === 'usd') return `$${num.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -24,8 +27,6 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
     let isMounted = true;
     let debounceTimer = null;
 
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
     const fetchHistoricalData = async (isRefresh = false, params = { coinId, vsCurrency, days }) => {
       const currentSeq = ++requestSeqRef.current;
 
@@ -33,7 +34,7 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
         const d = parseFloat(params.days);
         const actualDays = (isNaN(d) || d <= 0) ? 7 : d;
         const cacheKey = `${params.coinId}|${params.vsCurrency}|${actualDays}`;
-        const url = `https://api.coingecko.com/api/v3/coins/${params.coinId}/market_chart?vs_currency=${params.vsCurrency}&days=${actualDays}`;
+        const url = `/api/crypto/chart?asset=${encodeURIComponent(params.coinId)}&currency=${encodeURIComponent(params.vsCurrency)}&days=${actualDays}`;
         const now = Date.now();
         const cached = dataCacheRef.current.get(cacheKey);
         const hasFreshCache = Boolean(cached && now - cached.timestamp < 120000);
@@ -52,32 +53,20 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
         if (!isRefresh && hasFreshCache) {
           if (!isMounted || currentSeq !== requestSeqRef.current) return;
           setData(cached.prices);
+          setLastUpdatedAt(new Date(cached.timestamp).toISOString());
           hasDataRef.current = true;
           setError(null);
           setLoading(false);
           return;
         }
 
-        const maxAttempts = 3;
-        const runFetch = async () => {
-          let lastRes = null;
-          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            const res = await fetch(url, { cache: 'no-store' });
-            lastRes = res;
-            if (res.ok) {
-              const json = await res.json();
-              return json;
-            }
-
-            const shouldRetry = [429, 500, 502, 503, 504].includes(res.status);
-            if (!shouldRetry || attempt === maxAttempts) break;
-            await sleep(600 * attempt);
-          }
-          throw new Error(`Ошибка ${lastRes?.status ?? 'network'}`);
-        };
-
         const pending = inFlightRef.current.get(cacheKey);
-        const json = pending || runFetch();
+        const json = pending || fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10000) })
+          .then(async (res) => {
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || !body.ok) throw new Error(body.error || `Ошибка ${res.status}`);
+            return body;
+          });
         if (!pending) inFlightRef.current.set(cacheKey, json);
         const result = await json;
         inFlightRef.current.delete(cacheKey);
@@ -89,10 +78,11 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
           return;
         }
 
-        dataCacheRef.current.set(cacheKey, { prices: result.prices, timestamp: now });
+        dataCacheRef.current.set(cacheKey, { prices: result.prices, timestamp: result.updatedAt ? new Date(result.updatedAt).getTime() : now });
         setData(result.prices);
+        setLastUpdatedAt(result.updatedAt || new Date(now).toISOString());
         hasDataRef.current = true;
-        setError(null);
+        setError(result.stale ? result.error || 'Показаны сохранённые данные' : null);
         setLoading(false);
       } catch (err) {
         console.error('Ошибка:', err);
@@ -111,13 +101,22 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
       fetchHistoricalData(false, { coinId, vsCurrency, days });
     }, 220);
 
-    const interval = setInterval(() => fetchHistoricalData(true), 180000);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchHistoricalData(true);
+    }, 60000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') fetchHistoricalData(true);
+    };
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    window.addEventListener('online', refreshWhenVisible);
     return () => {
       isMounted = false;
       if (debounceTimer) clearTimeout(debounceTimer);
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.removeEventListener('online', refreshWhenVisible);
     };
-  }, [coinId, vsCurrency, days]); // formatAxisValue стабилен для canvas-отрисовки // formatAxisValue стабилен для canvas
+  }, [coinId, vsCurrency, days, refreshToken]);
 
   // Отслеживание размера контейнера (контейнер рендерится только при успешной загрузке)
   useEffect(() => {
@@ -139,7 +138,7 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
 
   // Рендеринг canvas с корректными размерами
   useEffect(() => {
-    if (loading || error || !data.length || !canvasRef.current || !containerRef.current) return;
+    if (!data.length || !canvasRef.current || !containerRef.current) return;
 
     const canvas = canvasRef.current;
     let width = containerSize.width;
@@ -149,10 +148,12 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
       width = Math.max(280, Math.floor(rect.width));
       height = Math.max(220, Math.floor(rect.height));
     }
-    canvas.width = width;
-    canvas.height = height;
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(width * pixelRatio);
+    canvas.height = Math.round(height * pixelRatio);
 
     const ctx = canvas.getContext('2d');
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.clearRect(0, 0, width, height);
 
     const prices = data.map(d => d[1]).filter(p => p != null && !isNaN(p));
@@ -164,14 +165,14 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
 
     const leftPad = width < 360 ? 56 : width < 480 ? 64 : width < 768 ? 80 : 106;
     const axisFont = width < 480 ? '10px' : '12px';
-    const padding = { top: 16, right: 12, bottom: 24, left: leftPad };
+    const padding = { top: 18, right: 16, bottom: 42, left: leftPad };
     const plotWidth = Math.max(1, width - padding.left - padding.right);
     const plotHeight = Math.max(1, height - padding.top - padding.bottom);
     const scaleY = (price) => padding.top + (1 - (price - min) / range) * plotHeight;
     const stepX = plotWidth / Math.max(1, prices.length - 1);
     const axisSteps = 5;
 
-    ctx.strokeStyle = '#f0f0f0';
+    ctx.strokeStyle = 'rgba(177, 193, 217, 0.14)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= axisSteps; i++) {
       const y = padding.top + (plotHeight * i) / axisSteps;
@@ -181,11 +182,27 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
       ctx.stroke();
 
       const value = max - ((max - min) * i) / axisSteps;
-      ctx.fillStyle = '#777';
+      ctx.fillStyle = '#91a3bd';
       ctx.font = `${axisFont} Inter, Arial, sans-serif`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(formatAxisValue(value), 8, y);
+    }
+
+    const tickCount = Math.min(4, prices.length);
+    ctx.fillStyle = '#91a3bd';
+    ctx.font = `${axisFont} Inter, Arial, sans-serif`;
+    ctx.textBaseline = 'top';
+    for (let i = 0; i < tickCount; i++) {
+      const index = Math.round((i / Math.max(1, tickCount - 1)) * (prices.length - 1));
+      const timestamp = Number(data[index]?.[0]);
+      if (!Number.isFinite(timestamp)) continue;
+      const x = padding.left + index * stepX;
+      const label = new Date(timestamp).toLocaleString('ru-RU', Number(days) < 1
+        ? { hour: '2-digit', minute: '2-digit' }
+        : { day: '2-digit', month: 'short' });
+      ctx.textAlign = i === 0 ? 'left' : i === tickCount - 1 ? 'right' : 'center';
+      ctx.fillText(label, x, height - padding.bottom + 10);
     }
 
     ctx.beginPath();
@@ -195,30 +212,105 @@ const PriceChart = ({ coinId, vsCurrency, days }) => {
       const y = scaleY(prices[i]);
       ctx.lineTo(x, y);
     }
-    ctx.strokeStyle = '#E2001A';
-    ctx.lineWidth = 2;
+    ctx.lineTo(width - padding.right, height - padding.bottom);
+    ctx.lineTo(padding.left, height - padding.bottom);
+    ctx.closePath();
+    const fill = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+    fill.addColorStop(0, 'rgba(255, 92, 112, 0.28)');
+    fill.addColorStop(1, 'rgba(255, 92, 112, 0.01)');
+    ctx.fillStyle = fill;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(padding.left, scaleY(prices[0]));
+    for (let i = 1; i < prices.length; i++) {
+      ctx.lineTo(padding.left + i * stepX, scaleY(prices[i]));
+    }
+    ctx.shadowColor = 'rgba(255, 76, 101, 0.42)';
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = '#ff5c70';
+    ctx.lineWidth = 3;
     ctx.stroke();
+    ctx.shadowBlur = 0;
 
     const lastX = padding.left + (prices.length - 1) * stepX;
     const lastY = scaleY(prices[prices.length - 1]);
     ctx.beginPath();
     ctx.arc(lastX, lastY, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#E2001A';
+    ctx.fillStyle = '#ff5c70';
     ctx.fill();
-  }, [data, loading, error, containerSize, formatAxisValue]);
+    if (hoverIndex != null && prices[hoverIndex] != null) {
+      const hoverX = padding.left + hoverIndex * stepX;
+      const hoverY = scaleY(prices[hoverIndex]);
+      ctx.save();
+      ctx.setLineDash([4, 5]);
+      ctx.strokeStyle = 'rgba(205, 220, 242, 0.4)';
+      ctx.beginPath();
+      ctx.moveTo(hoverX, padding.top);
+      ctx.lineTo(hoverX, height - padding.bottom);
+      ctx.stroke();
+      ctx.restore();
+      ctx.beginPath();
+      ctx.arc(hoverX, hoverY, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#15243b';
+      ctx.fill();
+      ctx.strokeStyle = '#ff5c70';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+  }, [data, containerSize, formatAxisValue, hoverIndex, days]);
 
-  if (loading && !data.length) return <div className="chart-loading">Загрузка...</div>;
-  if (error && !data.length) return <div className="chart-error">{error}</div>;
+  const handlePointerMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const leftPad = rect.width < 360 ? 56 : rect.width < 480 ? 64 : rect.width < 768 ? 80 : 106;
+    const plotWidth = Math.max(1, rect.width - leftPad - 16);
+    const progress = Math.max(0, Math.min(1, (event.clientX - rect.left - leftPad) / plotWidth));
+    setHoverIndex(Math.round(progress * Math.max(0, data.length - 1)));
+  };
+
+  const selectedPoint = hoverIndex == null ? data[data.length - 1] : data[hoverIndex];
+
+  if (loading && !data.length) return <div className="chart-loading">Загружаем историю котировок…</div>;
+  if (error && !data.length) return <div className="chart-error">График пока недоступен. Попробуйте позже.</div>;
   return (
-    <div ref={containerRef} className="chart-canvas-container">
-      <canvas ref={canvasRef} className="price-canvas" />
-      {loading && data.length > 0 && <div className="chart-loading-overlay">Обновляем график...</div>}
-    </div>
+    <>
+      <div ref={containerRef} className="chart-canvas-container">
+        <canvas
+          ref={canvasRef}
+          className="price-canvas"
+          aria-label={`График цены ${coinId}`}
+          onPointerMove={handlePointerMove}
+          onPointerLeave={() => setHoverIndex(null)}
+        />
+        {loading && data.length > 0 && <div className="chart-loading-overlay">Обновляем график...</div>}
+        {error && data.length > 0 && <div className="chart-loading-overlay" role="status">Показаны последние сохранённые данные</div>}
+      </div>
+      <div className="chart-foot">
+        {selectedPoint && <p className="chart-point-label" role="status">{new Date(selectedPoint[0]).toLocaleString('ru-RU')} · <strong>{formatAxisValue(selectedPoint[1])}</strong></p>}
+        <span className="chart-updated-at">{lastUpdatedAt ? `Данные: ${new Date(lastUpdatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : 'Ожидаем данные'} · автообновление</span>
+      </div>
+      <div className="chart-history">
+        <div className="chart-history__header"><h3>История цены</h3><span>Последние значения</span></div>
+        <div className="chart-history__table-wrap">
+          <table className="chart-history__table">
+            <thead><tr><th>Время</th><th>Цена</th><th>Изменение</th></tr></thead>
+            <tbody>
+              {data.slice(-8).reverse().map(([timestamp, value], index, rows) => {
+                const previous = rows[index + 1]?.[1];
+                const change = previous ? ((Number(value) - Number(previous)) / Number(previous)) * 100 : 0;
+                return <tr key={`${timestamp}-${index}`}><td>{new Date(timestamp).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td><td>{formatAxisValue(value)}</td><td className={change >= 0 ? 'positive' : 'negative'}>{change >= 0 ? '+' : ''}{change.toFixed(2)}%</td></tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
   );
 };
 
 const ChartsPage = () => {
   const navigate = useNavigate();
+  const { markets, loading: marketsLoading, error: marketsError, refresh: refreshMarkets, updatedAt: marketsUpdatedAt } = useCryptoRates();
 
   const [baseAsset, setBaseAsset] = useState('bitcoin');
   const [vsCurrency, setVsCurrency] = useState('usd');
@@ -227,6 +319,9 @@ const ChartsPage = () => {
   const [mainMetrics, setMainMetrics] = useState(null);
   const [topCoins, setTopCoins] = useState([]);
   const [loadingTop, setLoadingTop] = useState(true);
+  const [metricsStale, setMetricsStale] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [manualRefreshing, setManualRefreshing] = useState(false);
 
   // Опции времени: для всех валют одинаковые (API поддерживает дробные дни)
   const timeOptions = [
@@ -250,57 +345,76 @@ const ChartsPage = () => {
   ];
 
   const vsCurrencies = ['usd', 'rub', 'btc', 'eth'];
+  const marketsAreFresh = Boolean(marketsUpdatedAt && !marketsError && Date.now() - new Date(marketsUpdatedAt).getTime() < 3 * 60 * 1000);
 
-  // === Загрузка метрик и топа — без изменений ===
+  const refreshAll = async () => {
+    setManualRefreshing(true);
+    await Promise.allSettled([
+      refreshMarkets(),
+      fetch(`/api/crypto/asset?asset=${encodeURIComponent(baseAsset)}&currency=${encodeURIComponent(vsCurrency)}`, { cache: 'no-store', signal: AbortSignal.timeout(10000) })
+        .then((res) => res.json())
+        .then((data) => { if (data.ok) { setMainMetrics(data); setMetricsStale(Boolean(data.stale)); } }),
+    ]);
+    setRefreshToken((value) => value + 1);
+    setManualRefreshing(false);
+  };
+
   useEffect(() => {
+    let active = true;
+    setMainMetrics(null);
+    setMetricsStale(false);
     const fetchMainMetrics = async () => {
       try {
-        const res = await fetch(
-          `https://api.coingecko.com/api/v3/coins/${baseAsset}?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false`
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        setMainMetrics({
-          price: data.market_data?.current_price?.[vsCurrency] || 0,
-          change24h: data.market_data?.price_change_percentage_24h || 0,
-          volume: data.market_data?.total_volume?.[vsCurrency] || 0,
-          marketCap: data.market_data?.market_cap?.[vsCurrency] || 0,
-        });
-      } catch (err) {
-        console.error('Ошибка метрик:', err);
+        const res = await fetch(`/api/crypto/asset?asset=${encodeURIComponent(baseAsset)}&currency=${encodeURIComponent(vsCurrency)}`, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || `Ошибка ${res.status}`);
+        if (!active) return;
+        setMainMetrics(data);
+        setMetricsStale(Boolean(data.stale));
+      } catch {
+        if (active) setMetricsStale(true);
       }
     };
     fetchMainMetrics();
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchMainMetrics();
+    }, 60000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') fetchMainMetrics();
+    };
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    window.addEventListener('online', refreshWhenVisible);
+    return () => {
+      active = false;
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.removeEventListener('online', refreshWhenVisible);
+    };
   }, [baseAsset, vsCurrency]);
 
   useEffect(() => {
-    const fetchTopCoins = async () => {
-      try {
-        const res = await fetch(
-          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h'
-        );
-        if (!res.ok) return;
-        const coins = await res.json();
-        setTopCoins(coins);
-        setLoadingTop(false);
-      } catch (err) {
-        console.error('Ошибка топа:', err);
-        setLoadingTop(false);
-      }
-    };
-    fetchTopCoins();
-    const interval = setInterval(fetchTopCoins, 60000);
-    return () => clearInterval(interval);
-  }, []);
+    setTopCoins(markets);
+    setLoadingTop(marketsLoading && markets.length === 0);
+  }, [markets, marketsLoading]);
 
   return (
     <div className="charts-page">
       <div className="container">
         <div className="charts-header">
-          <h2 className="section-title">Анализ криптовалют</h2>
-          <button onClick={() => navigate(-1)} className="btn-outline">
-            Назад
-          </button>
+          <div>
+            <p className="charts-eyebrow">MARKET INTELLIGENCE</p>
+            <h2 className="section-title">Анализ криптовалют</h2>
+            <p className="charts-header__subtitle">Живые котировки, история и динамика рынка в одном экране.</p>
+          </div>
+          <div className="charts-header__actions">
+            <span className={`charts-live ${marketsAreFresh ? '' : 'is-stale'}`}><i /> {marketsAreFresh ? 'LIVE' : 'Данные обновляются'} · {marketsUpdatedAt ? new Date(marketsUpdatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : 'ожидание'}</span>
+            <button onClick={refreshAll} className="btn-outline" disabled={manualRefreshing}>
+              {manualRefreshing ? 'Обновляем…' : 'Обновить данные'}
+            </button>
+            <button onClick={() => navigate(-1)} className="btn-outline charts-back-button">
+              Назад
+            </button>
+          </div>
         </div>
 
         <div className="charts-main-layout">
@@ -341,6 +455,7 @@ const ChartsPage = () => {
                 coinId={baseAsset}
                 vsCurrency={vsCurrency}
                 days={timeRange}
+                refreshToken={refreshToken}
               />
             </div>
 
@@ -350,8 +465,8 @@ const ChartsPage = () => {
                   <span>Цена:</span>
                   <span className="metric-value">
                     {vsCurrency === 'usd'
-                      ? `$${mainMetrics.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                      : `${mainMetrics.price.toLocaleString(undefined, { maximumFractionDigits: 8 })} ${vsCurrency.toUpperCase()}`}
+                      ? `$${Number(mainMetrics.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      : `${Number(mainMetrics.price).toLocaleString(undefined, { maximumFractionDigits: 8 })} ${vsCurrency.toUpperCase()}`}
                   </span>
                 </div>
                 <div className="metric-item">
@@ -364,26 +479,28 @@ const ChartsPage = () => {
                   <span>Объём:</span>
                   <span className="metric-value">
                     {vsCurrency === 'usd'
-                      ? `$${(mainMetrics.volume / 1e6).toFixed(2)}M`
-                      : `${(mainMetrics.volume / 1e6).toFixed(2)}M ${vsCurrency.toUpperCase()}`}
+                      ? `$${(Number(mainMetrics.volume) / 1e6).toFixed(2)}M`
+                      : `${(Number(mainMetrics.volume) / 1e6).toFixed(2)}M ${vsCurrency.toUpperCase()}`}
                   </span>
                 </div>
                 <div className="metric-item">
                   <span>Капитализация:</span>
                   <span className="metric-value">
                     {vsCurrency === 'usd'
-                      ? `$${(mainMetrics.marketCap / 1e9).toFixed(2)}B`
-                      : `${(mainMetrics.marketCap / 1e9).toFixed(2)}B ${vsCurrency.toUpperCase()}`}
+                      ? `$${(Number(mainMetrics.marketCap) / 1e9).toFixed(2)}B`
+                      : `${(Number(mainMetrics.marketCap) / 1e9).toFixed(2)}B ${vsCurrency.toUpperCase()}`}
                   </span>
                 </div>
               </div>
             )}
+            {metricsStale && <p className="chart-error" role="status">Данные временно могут быть устаревшими.</p>}
           </div>
 
           {/* Правая панель — без изменений */}
           <div className="chart-sidebar">
             <div className="sidebar-section">
               <h3>Топ по капитализации</h3>
+              <p>Котировки в USD · обновление каждую минуту</p>
               {loadingTop ? (
                 <div className="sidebar-loading">Загрузка...</div>
               ) : (
@@ -392,9 +509,9 @@ const ChartsPage = () => {
                     <div key={coin.id} className="sidebar-coin">
                       <div><strong>{coin.symbol.toUpperCase()}</strong></div>
                       <div className="sidebar-coin-right">
-                        <span className="sidebar-price">${coin.current_price.toLocaleString()}</span>
-                        <span className={`metric-change ${coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative'}`}>
-                          {coin.price_change_percentage_24h >= 0 ? '+' : ''}{coin.price_change_percentage_24h.toFixed(2)}%
+                        <span className="sidebar-price">${Number(coin.current_price || 0).toLocaleString()}</span>
+                        <span className={`metric-change ${Number(coin.price_change_percentage_24h || 0) >= 0 ? 'positive' : 'negative'}`}>
+                          {Number(coin.price_change_percentage_24h || 0) >= 0 ? '+' : ''}{Number(coin.price_change_percentage_24h || 0).toFixed(2)}%
                         </span>
                       </div>
                     </div>

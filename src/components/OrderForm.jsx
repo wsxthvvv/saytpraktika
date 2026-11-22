@@ -3,41 +3,31 @@ import { useCart } from '../contexts/CartContext';
 import { formatRussianPhone } from '../utils/phone';
 import PersonalDataConsentCheckbox from './PersonalDataConsentCheckbox';
 import { formatUsd } from '../utils/currency';
-import { submitLead } from '../api/submitLead';
 import { setLeadNotice } from '../utils/leadNotice';
 import { loadYandexMaps } from '../utils/loadYandexMaps';
 import { resolveDeliveryAddress } from '../utils/yandexReverseGeocode';
-import { persistSessionProfile } from '../utils/userAuth';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 const OrderForm = ({ onOrderSubmit, onCancel }) => {
-  const { cart, total, clearCart } = useCart();
+  const { cart, total, clearCart, updateCartItem } = useCart();
+  const { delivery } = useSiteSettings();
   
-  // Функция для получения данных пользователя
+  const [sessionUser, setSessionUser] = useState(null);
   const getUserData = () => {
-    const savedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    // Получаем адрес из последнего заказа, если есть
-    const lastOrder = savedUser.orders && savedUser.orders.length > 0 
-      ? savedUser.orders[savedUser.orders.length - 1] 
-      : null;
-    
+    const savedUser = sessionUser || {};
     return {
       lastName: savedUser.lastName || '',
       firstName: savedUser.firstName || '',
       patronymic: savedUser.patronymic || '',
       phone: savedUser.phone || '',
       email: savedUser.email || '',
-      address: savedUser.address || (lastOrder?.address || ''),
+      address: savedUser.address || '',
     };
   };
   
-  const [formData, setFormData] = useState(() => {
-    const userData = getUserData();
-    return {
-      ...userData,
-      deliveryDate: '',
-      deliveryTime: '',
-      comments: '',
-    };
+  const [formData, setFormData] = useState({
+    lastName: '', firstName: '', patronymic: '', phone: '', email: '', address: '',
+    deliveryDate: '', deliveryTime: '', comments: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,15 +35,28 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
   const [pdConsentError, setPdConsentError] = useState('');
   const [isLocating, setIsLocating] = useState(false);
   const [mapNotice, setMapNotice] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [priceUpdated, setPriceUpdated] = useState(false);
+  const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
+  const [idempotencyKey, setIdempotencyKey] = useState(() => window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
+  const [deliveryQuote, setDeliveryQuote] = useState(null);
+  const [deliveryQuoteLoading, setDeliveryQuoteLoading] = useState(false);
+  const deliveryIntervals = Array.isArray(deliveryQuote?.intervals) && deliveryQuote.intervals.length
+    ? deliveryQuote.intervals
+    : Array.isArray(delivery.intervals) ? delivery.intervals : [];
   const mapRef = useRef(null);
   const ymapsRef = useRef(null);
   const placemarkRef = useRef(null);
 
   // Автоматическое обновление данных при изменении пользователя
   useEffect(() => {
-    const syncUserData = () => {
-      const userData = getUserData();
-      // Обновляем только если поля пустые или если пользователь изменился
+    let mounted = true;
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!mounted || !data.authenticated || !data.user) return;
+        const userData = data.user;
+        setSessionUser(userData);
       setFormData(prev => ({
         ...prev,
         lastName: prev.lastName || userData.lastName,
@@ -63,16 +66,9 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
         email: prev.email || userData.email,
         address: prev.address || userData.address,
       }));
-    };
-
-    syncUserData();
-    window.addEventListener('storage', syncUserData);
-    window.addEventListener('userUpdated', syncUserData);
-    
-    return () => {
-      window.removeEventListener('storage', syncUserData);
-      window.removeEventListener('userUpdated', syncUserData);
-    };
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
   }, []);
 
   // Функция для заполнения всех полей из профиля
@@ -100,6 +96,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
           if (map && placemark) {
             map.setCenter(coords, 15);
             placemark.geometry.setCoordinates(coords);
+            setCoordinates({ latitude: Number(coords[0]), longitude: Number(coords[1]) });
           }
         }
       }).catch(err => {
@@ -117,6 +114,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
         initMap();
       })
       .catch((err) => {
+        if (cancelled) return;
         console.error('Яндекс.Карты не загрузились:', err);
         setMapNotice('Карта недоступна. Введите адрес вручную.');
       });
@@ -163,6 +161,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
     const applyCoordsToDelivery = async (coords, zoom = 17) => {
       myPlacemark.geometry.setCoordinates(coords);
       myMap.setCenter(coords, zoom, { duration: 200 });
+      setCoordinates({ latitude: Number(coords[0]), longitude: Number(coords[1]) });
       try {
         const address = await resolveDeliveryAddress(ymaps, coords);
         if (address) {
@@ -225,6 +224,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
           try {
             map.setCenter(coords, 17);
             if (placemark) placemark.geometry.setCoordinates(coords);
+            setCoordinates({ latitude, longitude });
             const address = await resolveDeliveryAddress(ymaps, coords);
             if (address) {
               setFormData((prev) => ({ ...prev, address }));
@@ -236,6 +236,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
             console.error('Ошибка геокодирования:', err);
             map.setCenter(coords, 17);
             if (placemark) placemark.geometry.setCoordinates(coords);
+            setCoordinates({ latitude, longitude });
             setMapNotice('Точка отмечена на карте. Введите адрес вручную, если он не подставился.');
           }
         } else {
@@ -245,6 +246,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
             ...prev, 
             address: `Координаты: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}` 
           }));
+          setCoordinates({ latitude, longitude });
           
           // Пытаемся получить адрес через геокодирование, если Яндекс.Карты еще не загружены
           if (window.ymaps && window.ymaps.ready) {
@@ -312,6 +314,7 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
         map.setCenter(coords, 17);
         placemark.geometry.setCoordinates(coords);
         setFormData((prev) => ({ ...prev, address: canonicalAddress }));
+        setCoordinates({ latitude: Number(coords[0]), longitude: Number(coords[1]) });
         setMapNotice('');
       } else {
         setMapNotice('Адрес не найден. Уточните или отметьте точку на карте.');
@@ -334,20 +337,46 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
     const { name, value } = e.target;
     const nextValue = name === 'phone' ? formatRussianPhone(value) : value;
     setFormData(prev => ({ ...prev, [name]: nextValue }));
+    if (name === 'address') setCoordinates({ latitude: null, longitude: null });
   };
+
+  useEffect(() => {
+    if (!pdConsent || !formData.address.trim() || !cart.length) { setDeliveryQuote(null); return undefined; }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setDeliveryQuoteLoading(true);
+      try {
+        const response = await fetch('/api/delivery/quote', {
+          method: 'POST', credentials: 'include', signal: controller.signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: formData.address, ...coordinates, items: cart.map(({ id, quantity }) => ({ id, quantity })), consent: true }),
+        });
+        const data = await response.json().catch(() => ({}));
+        setDeliveryQuote(response.ok ? data.quote : { error: data.error || 'Стоимость доставки подтвердит менеджер' });
+      } catch (error) { if (error.name !== 'AbortError') setDeliveryQuote({ error: 'Стоимость доставки подтвердит менеджер' }); }
+      finally { setDeliveryQuoteLoading(false); }
+    }, 450);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [pdConsent, formData.address, coordinates, cart]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.phone.trim() && !formData.email.trim()) {
+      setSubmitError('Укажите телефон или email, чтобы менеджер мог связаться с вами.');
+      return;
+    }
     if (!pdConsent) {
       setPdConsentError('Необходимо дать согласие на обработку персональных данных');
       return;
     }
     setPdConsentError('');
+    setSubmitError('');
     setIsSubmitting(true);
 
     const contactName = [formData.lastName, formData.firstName, formData.patronymic].filter(Boolean).join(' ');
     const order = {
       id: Date.now(),
+      idempotencyKey,
       items: cart,
       total,
       currency: 'USD',
@@ -366,63 +395,36 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
       .map((item) => `${item.name || item.title || 'Товар'} × ${item.quantity || 1}`)
       .join('; ');
 
-    let leadResult;
     let savedOrder = order;
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...order, items: cart, itemsSummary }),
+        body: JSON.stringify({ ...order, items: cart, itemsSummary, consent: true, deliveryLatitude: coordinates.latitude, deliveryLongitude: coordinates.longitude }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Не удалось сохранить заказ');
+      if (!response.ok) {
+        if (data.code === 'PRICE_CHANGED' && Array.isArray(data.items)) {
+          data.items.forEach((item) => updateCartItem(item.id, { price: item.price, stock: item.stock, title: item.title }));
+          setPriceUpdated(true);
+        }
+        if (data.code === 'ITEM_UNAVAILABLE' && Array.isArray(data.unavailable)) {
+          data.unavailable.forEach((item) => updateCartItem(item.id, { stock: item.available, isAvailable: item.available > 0 }));
+        }
+        throw new Error(data.error || 'Не удалось сохранить заказ');
+      }
       savedOrder = data.order || order;
-      leadResult = { delivered: Boolean(data.delivered), stored: true };
-    } catch {
-      leadResult = await submitLead({
-        type: 'order',
-        name: contactName,
-        phone: order.phone,
-        email: order.email,
-        address: order.address,
-        deliveryDate: order.deliveryDate,
-        deliveryTime: order.deliveryTime,
-        comments: order.comments,
-        total: order.total,
-        itemsSummary,
-      });
+    } catch (error) {
+      setSubmitError(error.message || 'Не удалось оформить заказ. Попробуйте ещё раз.');
+      setIsSubmitting(false);
+      return;
     }
 
-    if (leadResult.delivered) {
-      setLeadNotice('Заказ оформлен. Менеджер получил уведомление и свяжется с вами.');
-    } else if (leadResult.stored) {
-      setLeadNotice('Заказ сохранён. Менеджер увидит его в системе и свяжется с вами.');
-    } else {
-      setLeadNotice(
-        'Заказ сохранён в личном кабинете. Менеджер свяжется с вами. Телефон: +7 903 764 46 98, email: 5421062@mail.ru.'
-      );
-    }
-
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (user.email) {
-      user.orders = user.orders || [];
-      user.orders.push(savedOrder);
-      Object.assign(user, {
-        lastName: formData.lastName,
-        firstName: formData.firstName,
-        patronymic: formData.patronymic,
-        fullName: contactName,
-        phone: formatRussianPhone(formData.phone),
-        address: formData.address,
-        email: formData.email
-      });
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      persistSessionProfile(user);
-      window.dispatchEvent(new Event('userUpdated'));
-    }
+    setLeadNotice(`Заказ №${savedOrder.orderNumber || String(savedOrder.id).slice(0, 8)} сохранён. Менеджер свяжется с вами.`);
 
     clearCart();
+    setIdempotencyKey(window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
     setIsSubmitting(false);
     onOrderSubmit?.(savedOrder);
   };
@@ -493,27 +495,25 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="phone">Телефон *</label>
+                <label htmlFor="phone">Телефон</label>
                 <input
                   type="tel"
                   id="phone"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  required
                   placeholder="+7 900-000-00-00"
                   autoComplete="tel"
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="email">Email *</label>
+                <label htmlFor="email">Email</label>
                 <input
                   type="email"
                   id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
                   placeholder="example@mail.ru"
                   autoComplete="email"
                 />
@@ -579,28 +579,33 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
             <h4 className="order-form__section-title">Дата и время доставки</h4>
             <div className="order-form__fields">
               <div className="form-field">
-                <label htmlFor="deliveryDate">Дата доставки *</label>
+                <label htmlFor="deliveryDate">Дата доставки</label>
                 <input
                   type="date"
                   id="deliveryDate"
                   name="deliveryDate"
                   value={formData.deliveryDate}
                   onChange={handleChange}
-                  required
                   min={minDate}
                   max={maxDate}
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="deliveryTime">Время доставки *</label>
-                <input
-                  type="time"
-                  id="deliveryTime"
-                  name="deliveryTime"
-                  value={formData.deliveryTime}
-                  onChange={handleChange}
-                  required
-                />
+                <label htmlFor="deliveryTime">{deliveryIntervals.length ? 'Интервал доставки' : 'Время доставки'}</label>
+                {deliveryIntervals.length ? (
+                  <select id="deliveryTime" name="deliveryTime" value={formData.deliveryTime} onChange={handleChange} required>
+                    <option value="">Выберите интервал</option>
+                    {deliveryIntervals.map((interval) => <option key={interval} value={interval}>{interval}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    type="time"
+                    id="deliveryTime"
+                    name="deliveryTime"
+                    value={formData.deliveryTime}
+                    onChange={handleChange}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -627,13 +632,16 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
               <span>Товаров:</span>
               <span>{cart.reduce((sum, item) => sum + (item.quantity || 1), 0)} шт.</span>
             </div>
-            <div className="order-summary__line order-summary__total">
-              <span>Итого:</span>
-              <span className="order-total-amount">{formatUsd(total)}</span>
-            </div>
+            <div className="order-summary__line"><span>Товары:</span><span>{formatUsd(deliveryQuote?.subtotal ?? total)}</span></div>
+            {deliveryQuoteLoading && <p role="status">Рассчитываем доставку…</p>}
+            {deliveryQuote?.shippingFee > 0 && <div className="order-summary__line"><span>Доставка:</span><span>{formatUsd(deliveryQuote.shippingFee)}</span></div>}
+            {deliveryQuote?.error && <p role="status">{deliveryQuote.error}</p>}
+            {deliveryQuote?.deliveryQuoteRequired && <p>Стоимость доставки подтвердит менеджер.</p>}
+            <div className="order-summary__line order-summary__total"><span>Итого:</span><span className="order-total-amount">{formatUsd(deliveryQuote?.total ?? total)}</span></div>
+            {priceUpdated && <p role="alert">Цена обновлена по каталогу. Проверьте итог и подтвердите заказ повторно.</p>}
+            <p>Стоимость и срок доставки менеджер подтвердит отдельно.</p>
           </div>
         </div>
-
         <PersonalDataConsentCheckbox
           id="order-pd-consent"
           checked={pdConsent}
@@ -655,10 +663,11 @@ const OrderForm = ({ onOrderSubmit, onCancel }) => {
                 Оформление...
               </>
             ) : (
-              'Оформить заказ'
+              priceUpdated ? 'Подтвердить новые цены и оформить' : 'Оформить заказ'
             )}
           </button>
         </div>
+        {submitError && <p className="contact-widget__error" role="alert">{submitError}</p>}
       </form>
     </div>
   );

@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const { createSession, findSessionUser, hashToken, query } = require('./db');
 
 const AUTH_COOKIE = '01service_session';
@@ -14,15 +15,17 @@ const parseCookies = (header = '') => Object.fromEntries(
 const getAuthToken = (req) => parseCookies(req.headers.cookie)[AUTH_COOKIE] || null;
 
 const hashPassword = (password) => {
-  const salt = crypto.randomBytes(16).toString('base64url');
-  const digest = crypto.scryptSync(password, salt, 64).toString('hex');
-  return `${salt}:${digest}`;
+  return bcrypt.hashSync(String(password), 12);
 };
 
 const verifyPassword = (password, storedHash) => {
+  if (/^\$2[aby]\$/.test(String(storedHash || ''))) {
+    try { return bcrypt.compareSync(String(password), storedHash); } catch { return false; }
+  }
   const [salt, expected] = String(storedHash || '').split(':');
   if (!salt || !expected) return false;
-  const actual = crypto.scryptSync(password, salt, 64).toString('hex');
+  let actual;
+  try { actual = crypto.scryptSync(String(password), salt, 64).toString('hex'); } catch { return false; }
   const actualBuffer = Buffer.from(actual, 'utf8');
   const expectedBuffer = Buffer.from(expected, 'utf8');
   return actualBuffer.length === expectedBuffer.length
@@ -42,6 +45,10 @@ const clearSession = async (req) => {
 
 const createUserSession = async (userId) => createSession(userId, SESSION_DAYS);
 
+const revokeOtherSessions = async (userId, currentToken) => {
+  await query('DELETE FROM sessions WHERE user_id=$1 AND token_hash<>$2', [userId, hashToken(currentToken)]);
+};
+
 module.exports = {
   AUTH_COOKIE,
   clearSession,
@@ -50,6 +57,7 @@ module.exports = {
   getSessionUser,
   hashPassword,
   parseCookies,
+  revokeOtherSessions,
   userSessionCookie,
   verifyPassword,
 };

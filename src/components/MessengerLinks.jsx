@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { MESSENGER_LINKS } from '../constants/messengers';
 import { MaxIcon, TelegramIcon } from './MessengerIcons';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 const icons = {
   telegram: TelegramIcon,
@@ -8,7 +9,11 @@ const icons = {
 };
 
 const MessengerLinks = ({ variant = 'row', className = '' }) => {
-  const items = [MESSENGER_LINKS.telegram, MESSENGER_LINKS.max];
+  const { contacts } = useSiteSettings();
+  const items = [
+    { ...MESSENGER_LINKS.telegram, href: contacts.telegramUrl || MESSENGER_LINKS.telegram.href },
+    { ...MESSENGER_LINKS.max, href: contacts.maxUrl },
+  ].filter((item) => item.href);
 
   return (
     <div className={`messenger-links messenger-links--${variant} ${className}`.trim()} role="group" aria-label="Мессенджеры">

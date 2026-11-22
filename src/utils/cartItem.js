@@ -1,12 +1,6 @@
 /** Позиции для оформления через корзину: майнеры и товары каталога (не услуги). */
 export const isCartEligibleItem = (item) => {
-  if (!item?.id) return false;
-  const id = String(item.id);
-  if (id.startsWith('consult-')) return false;
-  if (id.startsWith('product-')) return true;
-  if (id.startsWith('miner-')) return true;
-  if (/^\d+$/.test(id)) return true;
-  return false;
+  return Boolean(item?.id) && ['miner', 'computer'].includes(item.category);
 };
 
 export const cartItemKindLabel = (item) => {

@@ -7,6 +7,11 @@ const actionLabels = {
   'order.status': 'Статус заказа',
   'review.status': 'Модерация отзыва',
   'product.update': 'Изменение товара',
+  'user.role': 'Изменение роли',
+  'user.status': 'Доступ клиента',
+  'product.create': 'Создание товара',
+  'product.hide': 'Скрытие товара',
+  'settings.update': 'Настройки сайта',
 };
 
 const AdminAuditTab = () => {
@@ -41,6 +46,7 @@ const AdminAuditTab = () => {
               <th>Админ</th>
               <th>Действие</th>
               <th>Объект</th>
+              <th>Запрос</th>
               <th>Детали</th>
             </tr>
           </thead>
@@ -51,6 +57,7 @@ const AdminAuditTab = () => {
                 <td>{row.adminEmail || '—'}</td>
                 <td>{actionLabels[row.action] || row.action}</td>
                 <td>{row.entityType} #{String(row.entityId).slice(0, 12)}</td>
+                <td><code className="admin-code" title={row.requestId || 'ID запроса не сохранён'}>{row.requestId ? row.requestId.slice(0, 12) : '—'}</code></td>
                 <td><code className="admin-code">{JSON.stringify(row.details)}</code></td>
               </tr>
             ))}

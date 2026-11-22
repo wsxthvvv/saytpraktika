@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import AdminPagination from './admin/AdminPagination';
 import AdminCatalogTab from './admin/AdminCatalogTab';
 import AdminAuditTab from './admin/AdminAuditTab';
+import AdminOperationsTab from './admin/AdminOperationsTab';
 import {
   ORDER_STATUSES,
   LEAD_STATUSES,
@@ -24,7 +25,7 @@ const SITE_NAV = [
   { to: '/', label: 'Главная' },
   { to: '/services', label: 'Услуги' },
   { to: '/products', label: 'Продукты' },
-  { to: '/mining', label: 'Майнинг' },
+  { to: '/products?category=miner', label: 'Майнеры' },
   { to: '/news', label: 'Новости' },
 ];
 
@@ -35,6 +36,8 @@ const TABS = [
   { id: 'reviews', label: 'Отзывы', statKey: 'pendingReviews' },
   { id: 'users', label: 'Клиенты', statKey: 'customers' },
   { id: 'catalog', label: 'Каталог' },
+  { id: 'notifications', label: 'Уведомления' },
+  { id: 'settings', label: 'Контакты и доставка' },
   { id: 'audit', label: 'Журнал' },
 ];
 
@@ -84,6 +87,7 @@ const AdminToolbar = ({
         >
           <option value="all">Все типы</option>
           <option value="service">Услуги</option>
+          <option value="telegram_service">Услуги из Telegram</option>
           <option value="callback">Обратный звонок</option>
           <option value="order">Заказы с сайта</option>
         </select>
@@ -105,7 +109,7 @@ const OrderDetailModal = ({ order, onClose }) => {
       <div className="admin-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-labelledby="admin-order-title">
         <header className="admin-modal__header">
           <div>
-            <h2 id="admin-order-title">Заказ #{order.id.slice(0, 8)}</h2>
+            <h2 id="admin-order-title">Заказ #{order.orderNumber || order.id.slice(0, 8)}</h2>
             <p className="admin-muted">{formatAdminDate(order.createdAt)} · {order.status}</p>
           </div>
           <button type="button" className="admin-modal__close" onClick={onClose} aria-label="Закрыть">✕</button>
@@ -130,6 +134,9 @@ const OrderDetailModal = ({ order, onClose }) => {
               </li>
             ))}
           </ul>
+          {order.statusHistory?.length > 0 && (
+            <div className="admin-order-history"><h3 className="admin-modal__subtitle">История статусов</h3>{order.statusHistory.map((item, index) => <p key={`${item.createdAt}-${index}`}><strong>{item.label || item.status}</strong> · {formatAdminDate(item.createdAt)}{item.reason ? ` · ${item.reason}` : ''}</p>)}</div>
+          )}
         </div>
       </div>
     </div>
@@ -270,19 +277,57 @@ const AdminPanel = () => {
 
   const logout = async () => {
     await adminApi('/api/auth/logout', { method: 'POST', body: '{}' }).catch(() => {});
-    localStorage.removeItem('currentUser');
-    window.dispatchEvent(new Event('userUpdated'));
+    window.dispatchEvent(new CustomEvent('userUpdated', { detail: null }));
     setAuthenticated(false);
     setAdminUser(null);
   };
 
+  const changeUserStatus = async (user) => {
+    const nextIsActive = !user.isActive;
+    const action = nextIsActive ? 'разблокировать' : 'заблокировать';
+    if (!window.confirm(`Вы уверены, что хотите ${action} клиента ${user.email}?`)) return;
+    setUpdatingKey(`user-${user.id}`);
+    setError('');
+    try {
+      const data = await adminApi(`/api/admin/users/${user.id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive: nextIsActive }),
+      });
+      setUsers((items) => items.map((item) => item.id === user.id ? { ...item, isActive: data.user.is_active } : item));
+      showNotice(nextIsActive ? 'Доступ восстановлен' : 'Клиент заблокирован, его сессии закрыты');
+    } catch (statusError) {
+      setError(statusError.message);
+    } finally {
+      setUpdatingKey(null);
+    }
+  };
+
+  const changeUserRole = async (user, role) => {
+    if (role === user.role || !window.confirm(`Изменить роль пользователя ${user.email}?`)) return;
+    setUpdatingKey(`role-${user.id}`);
+    try {
+      const data = await adminApi(`/api/admin/users/${user.id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) });
+      setUsers((items) => items.map((item) => item.id === user.id ? { ...item, role: data.user.role } : item));
+      showNotice('Роль пользователя обновлена');
+    } catch (roleError) { setError(roleError.message); } finally { setUpdatingKey(null); }
+  };
+
   const changeStatus = async (kind, id, status) => {
+    let reason = '';
+    let note = '';
+    if (kind === 'orders' && status === 'Отменён администратором') {
+      reason = window.prompt('Укажите причину отмены заказа:') || '';
+      if (!reason.trim()) return;
+    }
+    if (kind === 'reviews' && status === 'deleted' && !window.confirm('Удалить отзыв? Запись останется в базе для аудита.')) return;
+    if (kind === 'reviews' && status === 'hidden' && !window.confirm('Скрыть отзыв с сайта?')) return;
+    if (kind === 'reviews' && ['rejected', 'deleted'].includes(status)) note = window.prompt('Причина решения (необязательно):') || '';
     setUpdatingKey(`${kind}-${id}`);
     setError('');
     try {
       const data = await adminApi(`/api/admin/${kind}/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, reason, note }),
       });
       if (kind === 'orders') {
         setOrders((items) => items.map((item) => (item.id === id ? { ...item, ...data.order } : item)));
@@ -580,7 +625,7 @@ const AdminPanel = () => {
                     {orders.map((order) => (
                       <tr key={order.id}>
                         <td>
-                          <strong>#{order.id.slice(0, 8)}</strong>
+                          <strong>#{order.orderNumber || order.id.slice(0, 8)}</strong>
                           <small>{order.items.map((item) => `${item.title} × ${item.quantity}`).join(', ')}</small>
                         </td>
                         <td>
@@ -682,6 +727,8 @@ const AdminPanel = () => {
                       <th>Email</th>
                       <th>Телефон</th>
                       <th>Регистрация</th>
+                      <th>Роль</th>
+                      <th>Доступ</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -691,6 +738,19 @@ const AdminPanel = () => {
                         <td>{user.email}</td>
                         <td>{user.phone || '—'}</td>
                         <td>{formatAdminDate(user.createdAt)}</td>
+                        <td><select value={user.role || 'customer'} disabled={updatingKey === `role-${user.id}`} onChange={(event) => changeUserRole(user, event.target.value)}><option value="customer">Клиент</option><option value="admin">Администратор</option></select></td>
+                        <td>
+                          {user.role === 'customer' ? (
+                          <button
+                            type="button"
+                            className="btn-outline"
+                            disabled={updatingKey === `user-${user.id}`}
+                            onClick={() => changeUserStatus(user)}
+                          >
+                            {user.isActive ? 'Заблокировать' : 'Разблокировать'}
+                          </button>
+                          ) : <span>{user.isActive ? 'Активен' : 'Заблокирован'}</span>}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -702,6 +762,8 @@ const AdminPanel = () => {
           )}
 
           {tab === 'catalog' && <AdminCatalogTab onNotice={showNotice} />}
+          {tab === 'notifications' && <AdminOperationsTab type="notifications" onNotice={showNotice} />}
+          {tab === 'settings' && <AdminOperationsTab type="settings" onNotice={showNotice} />}
           {tab === 'audit' && <AdminAuditTab />}
         </section>
       </div>

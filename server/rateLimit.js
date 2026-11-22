@@ -4,6 +4,7 @@ const WINDOW_MS = Number(process.env.LOGIN_RATE_WINDOW_MS || 15 * 60 * 1000);
 const MAX_ATTEMPTS = Number(process.env.LOGIN_RATE_MAX || 12);
 
 const getClientIp = (req) => {
+  if (process.env.TRUST_PROXY !== 'true') return req.socket?.remoteAddress || 'unknown';
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) return String(forwarded).split(',')[0].trim();
   return req.socket?.remoteAddress || 'unknown';
@@ -24,5 +25,8 @@ const checkRateLimit = (key, max = MAX_ATTEMPTS, windowMs = WINDOW_MS) => {
 };
 
 const checkLoginRateLimit = (req) => checkRateLimit(`login:${getClientIp(req)}`);
+const checkRouteRateLimit = (req, route, max, windowMs) => (
+  checkRateLimit(`${route}:${getClientIp(req)}`, max, windowMs)
+);
 
-module.exports = { checkLoginRateLimit };
+module.exports = { checkLoginRateLimit, checkRouteRateLimit };

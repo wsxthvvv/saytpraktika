@@ -1,7 +1,8 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation, useParams } from 'react-router-dom';
 import './App.css';
 import './responsive.css';
+import './styles/storefront.css';
 import { CartProvider, useCart } from './contexts/CartContext';
 import { CryptoRatesProvider } from './contexts/CryptoRatesContext';
 import Header from './components/Header';
@@ -22,12 +23,17 @@ import ScrollToTop from './components/ScrollToTop';
 import CryptoMarqueeGate from './components/CryptoMarqueeGate';
 import DocumentHead from './components/DocumentHead';
 import { getCurrentUser, logoutUser, toSessionUser } from './utils/userAuth';
-import { flushPendingLeads } from './utils/flushPendingLeads';
 import AdminPanel from './components/AdminPanel';
+import SiteNotFound from './components/SiteNotFound';
+import { setSessionUser } from './utils/sessionUser';
+import { SiteSettingsProvider } from './contexts/SiteSettingsContext';
 
 const Home = lazy(() => import('./pages/Home'));
 const ChartsPage = lazy(() => import('./components/ChartsPage'));
-const MiningEquipment = lazy(() => import('./components/MiningEquipment'));
+const LegacyMinerRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/products/${encodeURIComponent(id)}`} replace />;
+};
 
 const RouteFallback = () => (
   <p className="route-loading" role="status">
@@ -39,59 +45,57 @@ function AppContent() {
   const { itemCount } = useCart();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('currentUser');
-    return stored ? toSessionUser(JSON.parse(stored)) : null;
-  });
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const syncUser = () => {
-      const stored = localStorage.getItem('currentUser');
-      setUser(stored ? toSessionUser(JSON.parse(stored)) : null);
+    const syncUser = (event) => {
+      const nextUser = event.detail === undefined ? null : toSessionUser(event.detail);
+      setSessionUser(nextUser);
+      setUser(nextUser);
     };
     window.addEventListener('userUpdated', syncUser);
-    window.addEventListener('storage', syncUser);
-    return () => {
-      window.removeEventListener('userUpdated', syncUser);
-      window.removeEventListener('storage', syncUser);
-    };
+    return () => window.removeEventListener('userUpdated', syncUser);
   }, []);
 
   useEffect(() => {
     getCurrentUser().then((remoteUser) => {
       if (remoteUser) {
-        localStorage.setItem('currentUser', JSON.stringify(remoteUser));
+        setSessionUser(remoteUser);
         setUser(remoteUser);
+        window.dispatchEvent(new CustomEvent('userUpdated', { detail: remoteUser }));
       } else {
-        localStorage.removeItem('currentUser');
+        setSessionUser(null);
         setUser(null);
+        window.dispatchEvent(new CustomEvent('userUpdated', { detail: null }));
       }
     }).catch(() => {
-      // The profile page still renders the local cached state while the API is unavailable.
+      setSessionUser(null);
+      setUser(null);
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: null }));
     });
   }, []);
 
-  useEffect(() => {
-    flushPendingLeads();
-  }, []);
-
   const handleLogin = (userData) => {
-    localStorage.setItem('currentUser', JSON.stringify(userData));
+    setSessionUser(userData);
     setUser(userData);
+    window.dispatchEvent(new CustomEvent('userUpdated', { detail: userData }));
   };
 
   const handleRegister = (userData) => {
-    localStorage.setItem('currentUser', JSON.stringify(userData));
+    setSessionUser(userData);
     setUser(userData);
+    window.dispatchEvent(new CustomEvent('userUpdated', { detail: userData }));
   };
 
   const handleLogout = () => {
     logoutUser().catch(() => {});
-    localStorage.removeItem('currentUser');
+    setSessionUser(null);
     setUser(null);
+    window.dispatchEvent(new CustomEvent('userUpdated', { detail: null }));
   };
 
   return (
+    <SiteSettingsProvider>
     <CryptoRatesProvider>
       <div className={`App${isAdminRoute ? ' App--admin' : ''}`}>
         {!isAdminRoute && (
@@ -128,9 +132,11 @@ function AppContent() {
               <Route path="/news" element={<RbcNewsFeed />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/consent" element={<ConsentPD />} />
-              <Route path="/mining" element={<MiningEquipment />} />
-              <Route path="/mining/:id" element={<MinerDetail />} />
+              <Route path="/mining" element={<Navigate to="/products?category=miner" replace />} />
+              <Route path="/mining/:id" element={<LegacyMinerRedirect />} />
+              <Route path="/products/:id" element={<MinerDetail />} />
               <Route path="/charts" element={<ChartsPage />} />
+              <Route path="*" element={<SiteNotFound />} />
             </Routes>
           </Suspense>
         </main>
@@ -144,6 +150,7 @@ function AppContent() {
         )}
       </div>
     </CryptoRatesProvider>
+    </SiteSettingsProvider>
   );
 }
 

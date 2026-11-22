@@ -151,7 +151,7 @@ const fetchRbcCryptoNews = async (limit = 24) => {
   const merged = new Map();
 
   try {
-    const rssRes = await fetch(RBC_RSS_URL, { headers: FETCH_HEADERS });
+    const rssRes = await fetch(RBC_RSS_URL, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(8000) });
     if (rssRes.ok) {
       const xml = await rssRes.text();
       parseRssItems(xml)
@@ -164,7 +164,7 @@ const fetchRbcCryptoNews = async (limit = 24) => {
 
   if (merged.size < limit) {
     try {
-      const pageRes = await fetch(RBC_CRYPTO_PAGE, { headers: FETCH_HEADERS });
+      const pageRes = await fetch(RBC_CRYPTO_PAGE, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(8000) });
       if (pageRes.ok) {
         const html = await pageRes.text();
         parseCryptoPage(html).forEach((item) => {

@@ -23,18 +23,18 @@
 |------------|------------|
 | `TELEGRAM_BOT_TOKEN` | токен бота |
 | `TELEGRAM_CHAT_ID` | чат/канал для заявок |
+| `TELEGRAM_BOT_ENABLED` | `true`, чтобы включить polling-бота услуг; только на одном процессе |
 | `NODE_ENV` | `production` |
 | `PORT` | `8080` (за nginx) |
 | `HOST` | `0.0.0.0` в Docker; `127.0.0.1` за nginx на VPS |
 | `DATABASE_URL` | строка подключения PostgreSQL |
 | `DATABASE_SSL` | `true` для облачного PostgreSQL с TLS |
 | `ADMIN_USERNAME` | логин администратора |
-| `ADMIN_PASSWORD_HASH` | scrypt-хеш в формате `salt:hash` |
-| `ADMIN_SESSION_SECRET` | длинный случайный секрет сессий |
+| `ADMIN_PASSWORD_HASH` | bcrypt-хеш с cost 12 или выше; создаётся командой `npm run admin:hash-password -- "длинный-пароль"`. При записи в `.env` для Docker замените каждый `$` на `$$`. |
 
-Опционально: `MAX_WEBHOOK_URL`, `MAX_API_TOKEN`, `CORS_ORIGINS` (только если API на **другом** домене, чем сайт).
+Опционально: `PUBLIC_TELEGRAM_BOT_URL` (также можно сохранить ссылку в админ-панели), `MAX_WEBHOOK_URL`, `MAX_API_TOKEN`, `YANDEX_GEOCODER_API_KEY`, `CORS_ORIGINS` (только если API на **другом** домене, чем сайт).
 
-При сборке фронта на сервере те же `REACT_APP_*` из `.env.example` (ключи карт, Метрика, мессенджеры).
+При сборке фронта задайте публичный ключ JavaScript API Яндекс.Карт (`REACT_APP_YANDEX_MAPS_API_KEY`) с ограничением по домену. Серверный `YANDEX_GEOCODER_API_KEY` используется только для запасного определения адреса и не попадает в бандл. При необходимости задайте `REACT_APP_YANDEX_METRIKA_ID` и публичные ссылки мессенджеров.
 
 ## Вариант A — Docker (рекомендуется)
 
@@ -49,7 +49,7 @@ docker compose up -d --build
 curl -s http://127.0.0.1:8080/api/health
 ```
 
-Compose поднимает PostgreSQL с volume `postgres-data` и передаёт приложению `DATABASE_URL`. Перед первым production-запуском обязательно замените `POSTGRES_PASSWORD`, `ADMIN_PASSWORD_HASH` и `ADMIN_SESSION_SECRET`.
+Compose поднимает PostgreSQL с volume `postgres-data` и передаёт приложению `DATABASE_URL`. Перед первым production-запуском обязательно замените `POSTGRES_PASSWORD` и `ADMIN_PASSWORD_HASH`.
 
 Перед `docker compose build` можно экспортировать build-args для CRA (если нужны ключи в бандле):
 
@@ -78,14 +78,38 @@ Unit-файл: `deploy/systemd-01service.service.example`.
 
 1. Подключите репозиторий GitHub.
 2. **New → Blueprint** и укажите `render.yaml`, либо Web Service с Dockerfile.
-3. В панели задайте секреты: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, при необходимости MAX.
+3. В панели задайте секреты: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_BOT_ENABLED=true`, `PUBLIC_TELEGRAM_BOT_URL`, при необходимости MAX.
 4. Привяжите свой домен `01-service.ru` в Render.
 
 Health check: `/api/health`.
 
+## Резервная копия и восстановление PostgreSQL
+
+В Docker Compose сервис `db-backup` создаёт архив сразу после запуска, затем повторяет резервное копирование ежедневно. По умолчанию он хранит 14 дней копий в `./backups` и проверяет структуру каждого архива через `pg_restore --list`. Папка исключена из Git. Настройки периода и срока хранения задаются через `BACKUP_INTERVAL_SECONDS` и `BACKUP_RETENTION_DAYS`.
+
+Копии на том же сервере не защищают от потери сервера. Переносите их на отдельное защищённое хранилище и ограничьте доступ.
+
+Периодически проверяйте восстановление в отдельную временную базу. Эта команда не трогает рабочую базу:
+
+```bash
+docker compose exec -T db-backup sh -ec '
+  archive=$(find /backups -type f -name "${POSTGRES_DB}-*.dump" | sort | tail -n 1)
+  test -n "$archive"
+  check_db="restore_check_$(date +%s)"
+  createdb --host=db --username="$POSTGRES_USER" --template=template0 "$check_db"
+  trap '\''dropdb --if-exists --host=db --username="$POSTGRES_USER" "$check_db"'\'' EXIT
+  pg_restore --exit-on-error --no-owner --no-acl --host=db --username="$POSTGRES_USER" --dbname="$check_db" "$archive"
+  psql --host=db --username="$POSTGRES_USER" --dbname="$check_db" --command="SELECT COUNT(*) FROM users"
+'
+```
+
+Если нужно вручную восстановить данные, сначала создайте отдельную пустую базу, проверьте её, и только затем согласуйте переключение приложения. Не выполняйте восстановление поверх единственной рабочей базы.
+
+Для хостингов без Docker Compose настройте ежедневный `pg_dump` в планировщике хостинга и проводите такую же проверку восстановления в отдельной базе.
+
 ## Проверка после деплоя
 
-1. `GET https://01-service.ru/api/health` — `"ok": true`, `"telegram": true` (если токены заданы).
+1. `GET https://01-service.ru/api/health` — `"ok": true`, `"database": true`, `"telegramConfigured": true` (если токены заданы).
 2. Отправить тестовую заявку с формы «Контакты» — сообщение в Telegram.
 3. Главная / блок новостей — «Обновить», карточки с rbc.ru (не только 3 заглушки).
 

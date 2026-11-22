@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useCart } from '../contexts/CartContext';
 import Testimonials from './Testimonials';
 import { Link } from 'react-router-dom';
+import ServiceLeadModal from './ServiceLeadModal';
+import { formatUsd } from '../utils/currency';
 
 const MiningEquipment = () => {
   const { addToCart } = useCart();
@@ -18,6 +20,9 @@ const MiningEquipment = () => {
   const [miners, setMiners] = useState([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [availability, setAvailability] = useState('all');
+  const [questionMiner, setQuestionMiner] = useState(null);
 
   useEffect(() => {
     fetch('/api/products?category=miner')
@@ -31,7 +36,7 @@ const MiningEquipment = () => {
   }, []);
 
   const parseHashrate = (hashrateStr) => {
-    const match = hashrateStr.match(/([\d.]+)\s*(Th|Gh|Mh)\/s/i);
+    const match = String(hashrateStr || '').match(/([\d.]+)\s*(Th|Gh|Mh)\/s/i);
     if (!match) return 0;
     const value = parseFloat(match[1]);
     const unit = match[2].toUpperCase();
@@ -42,7 +47,7 @@ const MiningEquipment = () => {
   };
 
   const parsePower = (powerStr) => {
-    const match = powerStr.match(/([\d.]+)\s*W/i);
+    const match = String(powerStr || '').match(/([\d.]+)\s*W/i);
     return match ? parseFloat(match[1]) : 0;
   };
 
@@ -51,25 +56,26 @@ const MiningEquipment = () => {
   }, [miners]);
 
   const uniqueCoins = useMemo(() => {
-    const allCoins = miners.flatMap(m => m.coins.split('/').map(c => c.trim()));
+    const allCoins = miners.flatMap(m => String(m.coins || '').split('/').map(c => c.trim()).filter(Boolean));
     return [...new Set(allCoins)].sort();
   }, [miners]);
 
   const filteredMiners = useMemo(() => {
     return miners.filter(miner => {
-      if (searchQuery && !miner.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+      const searchable = `${miner.title || ''} ${miner.description || ''}`.toLocaleLowerCase('ru-RU');
+      if (searchQuery && !searchable.includes(searchQuery.toLocaleLowerCase('ru-RU'))) {
         return false;
       }
-      if (priceMin && miner.originalPrice < parseFloat(priceMin)) {
+      if (priceMin && miner.price < parseFloat(priceMin)) {
         return false;
       }
-      if (priceMax && miner.originalPrice > parseFloat(priceMax)) {
+      if (priceMax && miner.price > parseFloat(priceMax)) {
         return false;
       }
       if (selectedAlgorithm && miner.algorithm !== selectedAlgorithm) {
         return false;
       }
-      if (selectedCoin && !miner.coins.includes(selectedCoin)) {
+      if (selectedCoin && !String(miner.coins || '').includes(selectedCoin)) {
         return false;
       }
       const hashrateValue = parseHashrate(miner.hashrate);
@@ -86,9 +92,18 @@ const MiningEquipment = () => {
       if (powerMax && powerValue > parseFloat(powerMax)) {
         return false;
       }
+      if (availability === 'in-stock' && !miner.isAvailable) return false;
+      if (availability === 'out-of-stock' && miner.isAvailable) return false;
       return true;
     });
-  }, [miners, searchQuery, priceMin, priceMax, selectedAlgorithm, selectedCoin, hashrateMin, hashrateMax, powerMin, powerMax]);
+  }, [miners, searchQuery, priceMin, priceMax, selectedAlgorithm, selectedCoin, hashrateMin, hashrateMax, powerMin, powerMax, availability]);
+
+  const sortedMiners = useMemo(() => [...filteredMiners].sort((a, b) => {
+    if (sortBy === 'price-asc') return Number(a.price) - Number(b.price);
+    if (sortBy === 'price-desc') return Number(b.price) - Number(a.price);
+    if (sortBy === 'rating') return Number(b.averageRating || 0) - Number(a.averageRating || 0);
+    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+  }), [filteredMiners, sortBy]);
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -100,6 +115,8 @@ const MiningEquipment = () => {
     setHashrateMax('');
     setPowerMin('');
     setPowerMax('');
+    setAvailability('all');
+    setSortBy('newest');
   };
 
   return (
@@ -108,7 +125,7 @@ const MiningEquipment = () => {
       <div className="mining-header">
         <h2 className="section-title">Оборудование для майнинга</h2>
         <p className="mining-subtitle">
-          Профессиональные майнеры от Bitmain с доставкой по всему ТС. Гарантия 180 дней.
+          Каталог оборудования с характеристиками, остатками и ценами из базы сайта.
         </p>
         {catalogLoading && <p className="mining-subtitle" role="status">Загружаем каталог…</p>}
         {catalogError && <p className="contact-widget__error" role="alert">{catalogError}</p>}
@@ -149,6 +166,18 @@ const MiningEquipment = () => {
                 fontSize: '0.875rem'
               }}
             />
+          </div>
+          <div className="form-field">
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500' }}>Сортировка</label>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border, #e0e0e0)', borderRadius: '8px', fontSize: '0.875rem', background: 'white' }}>
+              <option value="newest">Сначала новые</option><option value="price-asc">Цена: по возрастанию</option><option value="price-desc">Цена: по убыванию</option><option value="rating">По рейтингу</option>
+            </select>
+          </div>
+          <div className="form-field">
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500' }}>Наличие</label>
+            <select value={availability} onChange={(e) => setAvailability(e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border, #e0e0e0)', borderRadius: '8px', fontSize: '0.875rem', background: 'white' }}>
+              <option value="all">Любое</option><option value="in-stock">В наличии</option><option value="out-of-stock">Нет в наличии</option>
+            </select>
           </div>
           <div className="form-field">
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500' }}>
@@ -302,8 +331,8 @@ const MiningEquipment = () => {
       </div>
 
       <div className="miners-grid">
-        {filteredMiners.length > 0 ? (
-          filteredMiners.map((miner) => (
+        {sortedMiners.length > 0 ? (
+          sortedMiners.map((miner) => (
           <article key={miner.id} className="miner-card">
             {/* УБРАЛИ БЕЙДЖ */}
             {/* <div className="miner-card__badge">{miner.badge}</div> */}
@@ -312,6 +341,8 @@ const MiningEquipment = () => {
                 <img
                   src={miner.image}
                   alt={miner.title}
+                  loading="lazy"
+                  decoding="async"
                   style={{
                     width: '100%',
                     height: '120px',
@@ -333,10 +364,11 @@ const MiningEquipment = () => {
                 <h3 className="miner-card__title">{miner.title}</h3>
               </Link>
               <div className="miner-card__price">
-                <span className="miner-price-current">${Math.round(miner.originalPrice).toLocaleString('en-US')}</span>
-                <span className="miner-price-original">${Math.round(miner.price).toLocaleString('en-US')}</span>
+                <span className="miner-price-current">{formatUsd(miner.price)}</span>
+                {miner.previousPrice && <span className="miner-price-original">{formatUsd(miner.previousPrice)}</span>}
               </div>
             </header>
+            {miner.reviewCount > 0 && <div className="miner-card__rating" aria-label={`Рейтинг ${Number(miner.averageRating).toFixed(1)} из 5`}>★ {Number(miner.averageRating).toFixed(1)} · {miner.reviewCount} отзывов</div>}
             <div className="miner-card__specs">
               <div className="miner-spec">
                 <span className="miner-spec__label">Алгоритм:</span>
@@ -362,30 +394,34 @@ const MiningEquipment = () => {
               </Link>
               <button 
                 className="btn miner-card__action" 
+                disabled={!miner.isAvailable}
                 onClick={() => addToCart({
                   ...miner,
-                  price: miner.originalPrice
+                  price: miner.price,
+                  stock: miner.stock,
                 })}
               >
-                В корзину
+                {miner.isAvailable ? 'В корзину' : 'Нет в наличии'}
               </button>
+              {!miner.isAvailable && <button type="button" className="btn-outline miner-card__details-btn" onClick={() => setQuestionMiner(miner)}>Задать вопрос</button>}
             </div>
           </article>
           ))
         ) : (
-          <div style={{ 
-            gridColumn: '1 / -1', 
-            textAlign: 'center', 
-            padding: '3rem',
-            color: 'var(--text-secondary, #666)'
-          }}>
-            <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>Ничего не найдено</p>
-            <p style={{ fontSize: '0.875rem' }}>Попробуйте изменить параметры фильтрации</p>
+          <div className="catalog-state miner-catalog-empty">
+            <span className="catalog-state__icon" aria-hidden="true">⛏</span>
+            <strong>{miners.length ? 'По этим фильтрам майнеры не найдены' : 'Каталог майнеров пополняется'}</strong>
+            <p>{miners.length ? 'Сбросьте фильтры или задайте более широкий диапазон.' : 'Опубликуем модели после проверки цены, наличия и характеристик. Здесь появятся карточки с заказом на сайте.'}</p>
+            <div className="catalog-state__actions">
+              {miners.length > 0 ? <button type="button" className="btn-outline" onClick={resetFilters}>Сбросить фильтры</button> : <Link to="/products" className="btn-outline">Компьютеры и серверы</Link>}
+              <a href="tel:+79037644698" className="btn">Позвонить менеджеру</a>
+            </div>
           </div>
         )}
       </div>
     </section>
     <Testimonials subtitle="Отзывы о майнинговом оборудовании и доставке" />
+    {questionMiner && <ServiceLeadModal service={{ title: `Вопрос о товаре: ${questionMiner.title}` }} onClose={() => setQuestionMiner(null)} />}
     </>
   );
 };

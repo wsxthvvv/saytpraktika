@@ -40,36 +40,6 @@ const CRYPTO_TOPIC_PATTERN = new RegExp(
   'i'
 );
 
-const FALLBACK_NEWS = [
-  {
-    id: 'rbc-fallback-crypto-1',
-    title: 'Регулирование криптовалют в России: что меняется для инвесторов и майнеров',
-    excerpt: 'Обзор ключевых инициатив по цифровым активам, легализации майнинга и требованиям к обмену криптовалют.',
-    category: 'Крипто',
-    date: new Date().toISOString(),
-    link: 'https://www.rbc.ru/crypto/',
-    source: 'РБК'
-  },
-  {
-    id: 'rbc-fallback-crypto-2',
-    title: 'Курсы Bitcoin и Ethereum: динамика рынка и факторы недели',
-    excerpt: 'Как макроэкономика и регуляторные новости влияют на котировки основных монет и ликвидность на биржах.',
-    category: 'Криптовалюты',
-    date: new Date(Date.now() - 3600000).toISOString(),
-    link: 'https://www.rbc.ru/crypto/',
-    source: 'РБК'
-  },
-  {
-    id: 'rbc-fallback-crypto-3',
-    title: 'Майнинг и инфраструктура: энергетика, оборудование и новые правила отрасли',
-    excerpt: 'Сводка материалов РБК о промышленном майнинге, тарифах на электричество и легализации площадок.',
-    category: 'Майнинг',
-    date: new Date(Date.now() - 7200000).toISOString(),
-    link: 'https://www.rbc.ru/crypto/tag/mining',
-    source: 'РБК'
-  }
-];
-
 const stripMarkup = (value = '') => {
   const container = document.createElement('div');
   container.innerHTML = value;
@@ -142,7 +112,7 @@ const parseRss2JsonFeed = (payload) => (payload.items || [])
   .map((item, index) => normaliseItem(item, index))
   .filter(Boolean);
 
-const fetchJson = async (url, signal) => {
+  const fetchJson = async (url, signal) => {
   const response = await fetch(url, { signal });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
@@ -184,7 +154,7 @@ const loadFeedItems = async (signal, limit = 24) => {
     }
   }
 
-  if (lastError) throw lastError;
+    if (lastError) throw lastError;
   return [];
 };
 
@@ -196,7 +166,7 @@ export const fetchRbcNews = async (signal, limit = 24) => {
     /* use fallback below */
   }
 
-  return FALLBACK_NEWS;
+  return [];
 };
 
-export { FALLBACK_NEWS, RBC_RSS_URL, REFRESH_INTERVAL_MS, isCryptoRelated };
+export { RBC_RSS_URL, REFRESH_INTERVAL_MS, isCryptoRelated };

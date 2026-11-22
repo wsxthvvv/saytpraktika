@@ -1,35 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import BrandLogo from './BrandLogo';
 
 const Header = ({ cartItemCount, currentUser }) => {
   const isAdmin = currentUser?.role === 'admin';
-  const [isMiningMenuOpen, setIsMiningMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const closeTimerRef = useRef(null);
   const location = useLocation();
-
-  const openMiningMenu = () => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    setIsMiningMenuOpen(true);
-  };
-
-  const scheduleCloseMiningMenu = () => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-    }
-    closeTimerRef.current = setTimeout(() => {
-      setIsMiningMenuOpen(false);
-      closeTimerRef.current = null;
-    }, 260);
-  };
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-    setIsMiningMenuOpen(false);
   };
 
   const toggleMobileMenu = () => {
@@ -38,7 +17,6 @@ const Header = ({ cartItemCount, currentUser }) => {
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
-    setIsMiningMenuOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -54,52 +32,13 @@ const Header = ({ cartItemCount, currentUser }) => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  const isMiningSection = ['/mining', '/charts', '/crypto'].some(
-    (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
-  );
-
   const navLinks = (
     <>
       <li><NavLink to="/" end onClick={closeMobileMenu}>Главная</NavLink></li>
       <li><NavLink to="/services" onClick={closeMobileMenu}>Услуги</NavLink></li>
       <li><NavLink to="/products" onClick={closeMobileMenu}>Товары</NavLink></li>
-      <li
-        className={`nav-dropdown ${isMiningMenuOpen ? 'open' : ''} ${isMiningSection ? 'nav-dropdown--active' : ''}`}
-        onMouseEnter={openMiningMenu}
-        onMouseLeave={scheduleCloseMiningMenu}
-      >
-        <button
-          type="button"
-          className={`nav-dropdown-trigger ${isMiningSection ? 'active' : ''}`}
-          aria-expanded={isMiningMenuOpen}
-          onClick={() => {
-            if (isMiningMenuOpen) {
-              scheduleCloseMiningMenu();
-            } else {
-              openMiningMenu();
-            }
-          }}
-        >
-          Майнинг
-        </button>
-        <ul className="nav-dropdown-menu">
-          <li>
-            <NavLink to="/mining" onClick={closeMobileMenu}>
-              Каталог оборудования
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/charts" onClick={closeMobileMenu}>
-              Графики
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/crypto" onClick={closeMobileMenu}>
-              Конвертер
-            </NavLink>
-          </li>
-        </ul>
-      </li>
+      <li><NavLink to="/charts" onClick={closeMobileMenu}>Графики</NavLink></li>
+      <li><NavLink to="/crypto" onClick={closeMobileMenu}>Конвертер</NavLink></li>
       <li><NavLink to="/news" onClick={closeMobileMenu}>Новости</NavLink></li>
     </>
   );

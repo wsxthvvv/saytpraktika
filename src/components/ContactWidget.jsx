@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import PersonalDataConsentCheckbox from './PersonalDataConsentCheckbox';
 import { submitLead } from '../api/submitLead';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 const ContactWidget = () => {
+  const { contacts } = useSiteSettings();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+7 ');
@@ -90,15 +92,19 @@ const ContactWidget = () => {
     setSendResult(null);
     const result = await submitLead({
       type: 'callback',
+      topic: 'Обратный звонок',
       name: name.trim(),
       phone,
+      consent: true,
     });
     setIsSending(false);
     setSendResult(result);
     setIsSent(true);
-    setPdConsent(false);
-    setName('');
-    setPhone('+7 ');
+    if (result.stored) {
+      setPdConsent(false);
+      setName('');
+      setPhone('+7 ');
+    }
     setTimeout(() => {
       setIsSent(false);
       setSendResult(null);
@@ -110,11 +116,11 @@ const ContactWidget = () => {
       {isOpen && (
         <div className="contact-widget__panel">
           <p className="contact-widget__title">Контакты</p>
-          <p className="contact-widget__subtitle">Руководитель проекта: Лаврентьев Дмитрий Михайлович</p>
+          <p className="contact-widget__subtitle">Оставьте контакты — менеджер ответит по заявке.</p>
 
           <div className="contact-widget__links">
-            <div className="contact-widget__contact-item">+7 903 764 46 98</div>
-            <div className="contact-widget__contact-item">5421062@mail.ru</div>
+            <div className="contact-widget__contact-item">{contacts.phone}</div>
+            <div className="contact-widget__contact-item">{contacts.email}</div>
           </div>
 
           <form className="contact-widget__form" onSubmit={handleRequestCall}>
@@ -152,13 +158,13 @@ const ContactWidget = () => {
             </button>
           </form>
           {isSent && sendResult && (
-            <div className="contact-widget__success" role="status">
+            <div className={sendResult.stored ? 'contact-widget__success' : 'contact-widget__error'} role={sendResult.stored ? 'status' : 'alert'}>
               <p>
-                {sendResult.delivered
+                {!sendResult.stored
+                  ? 'Не удалось сохранить заявку. Проверьте соединение и отправьте её ещё раз.'
+                  : sendResult.delivered
                   ? 'Заявка отправлена руководителю. Мы перезвоним в рабочее время.'
-                  : sendResult.stored
-                    ? 'Заявка сохранена. Менеджер увидит её в системе и перезвонит.'
-                    : 'Заявка сохранена на этом устройстве и будет отправлена при подключении сервера. Срочно: +7 903 764 46 98, 5421062@mail.ru.'}
+                  : `Заявка №${sendResult.leadNumber || sendResult.leadId || '—'} сохранена. Менеджер увидит её в системе и перезвонит.`}
               </p>
             </div>
           )}

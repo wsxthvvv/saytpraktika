@@ -1,6 +1,0 @@
-# https://www.robotstxt.org/robotstxt.html
-User-agent: *
-Allow: /
-
-# Замените example.com на ваш production-домен
-Sitemap: https://example.com/sitemap.xml

@@ -1,6 +1,6 @@
 /** Обратное геокодирование через HTTP API Яндекса (ключ только на сервере). */
 const reverseGeocodeCoords = async (latitude, longitude) => {
-  const apiKey = process.env.YANDEX_GEOCODER_API_KEY || process.env.REACT_APP_YANDEX_MAPS_API_KEY;
+  const apiKey = process.env.YANDEX_GEOCODER_API_KEY;
   if (!apiKey || apiKey === 'your-yandex-maps-api-key') {
     return { ok: false, error: 'missing_api_key' };
   }
@@ -20,7 +20,7 @@ const reverseGeocodeCoords = async (latitude, longitude) => {
     const requestUrl = new URL(url);
     if (withHouseKind) requestUrl.searchParams.set('kind', 'house');
     requestUrl.searchParams.set('results', '5');
-    const response = await fetch(requestUrl);
+    const response = await fetch(requestUrl, { signal: AbortSignal.timeout(8000) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       return { error: data.message || `HTTP ${response.status}` };

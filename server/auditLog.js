@@ -3,12 +3,13 @@ const logAdminAction = async (query, {
   action,
   entityType = '',
   entityId = '',
+  requestId = null,
   details = {},
 }) => {
   await query(
-    `INSERT INTO admin_audit_log (admin_user_id, action, entity_type, entity_id, details)
-     VALUES ($1, $2, $3, $4, $5::jsonb)`,
-    [adminUserId, action, entityType, String(entityId), JSON.stringify(details)],
+    `INSERT INTO admin_audit_log (admin_user_id, request_id, action, entity_type, entity_id, details)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+    [adminUserId, requestId, action, entityType, String(entityId), JSON.stringify(details)],
   );
 };
 
@@ -16,6 +17,7 @@ const mapAuditRow = (row) => ({
   id: row.id,
   adminUserId: row.admin_user_id,
   adminEmail: row.admin_email || '',
+  requestId: row.request_id || '',
   action: row.action,
   entityType: row.entity_type,
   entityId: row.entity_id,

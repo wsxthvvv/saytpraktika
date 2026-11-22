@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { adminApi, formatOrderTotal } from '../../admin/helpers';
 import AdminPagination from './AdminPagination';
 
 const categoryLabels = { computer: 'ПК / серверы', miner: 'Майнинг' };
+const emptyProduct = { title: '', category: 'miner', sku: '', slug: '', price: '', stock: '', description: '', image: '', images: '', warranty: '', shippingTime: '', metadata: '{\n  "brand": "",\n  "model": "",\n  "algorithm": "",\n  "coins": "",\n  "hashrate": "",\n  "power": "",\n  "noise": "",\n  "size": "",\n  "weight": ""\n}', isActive: false };
 
 const AdminCatalogTab = ({ onNotice }) => {
   const [products, setProducts] = useState([]);
@@ -14,12 +15,13 @@ const AdminCatalogTab = ({ onNotice }) => {
   const [form, setForm] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: '20' });
     if (category !== 'all') params.set('category', category);
-    if (search.trim()) params.set('q', search.trim());
+    if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
     return adminApi(`/api/admin/products?${params}`)
       .then((data) => {
         setProducts(data.products);
@@ -28,16 +30,14 @@ const AdminCatalogTab = ({ onNotice }) => {
       })
       .catch((loadError) => setError(loadError.message))
       .finally(() => setLoading(false));
-  };
+  }, [page, category, debouncedSearch]);
 
-  useEffect(() => {
-    load();
-  }, [page, category]);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setPage(1);
-      load();
+      setDebouncedSearch(search);
     }, 350);
     return () => window.clearTimeout(timer);
   }, [search]);
@@ -46,27 +46,50 @@ const AdminCatalogTab = ({ onNotice }) => {
     setEditing(product.id);
     setForm({
       title: product.title,
+      category: product.category,
+      sku: product.sku || '',
+      slug: product.slug || '',
       price: product.price,
+      stock: product.stock ?? '',
       description: product.description,
       image: product.image || '',
+      images: (product.images || []).join('\n'),
+      warranty: product.warranty || '',
+      shippingTime: product.shippingTime || '',
+      metadata: JSON.stringify(product.metadata || {}, null, 2),
       isActive: product.isActive,
     });
   };
 
+  const openNew = () => {
+    setEditing('new');
+    setForm(emptyProduct);
+    setError('');
+  };
+
   const save = async () => {
     try {
-      await adminApi(`/api/admin/products/${editing}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
+      const payload = {
           title: form.title,
+          category: form.category,
+          sku: form.sku,
+          slug: form.slug,
           price: Number(form.price),
+          stock: form.stock === '' ? null : Number(form.stock),
           description: form.description,
           image: form.image,
+          images: form.images.split('\n').map((image) => image.trim()).filter(Boolean),
+          warranty: form.warranty,
+          shippingTime: form.shippingTime,
+          metadata: JSON.parse(form.metadata || '{}'),
           isActive: form.isActive,
-        }),
+      };
+      await adminApi(editing === 'new' ? '/api/admin/products' : `/api/admin/products/${editing}`, {
+        method: editing === 'new' ? 'POST' : 'PATCH',
+        body: JSON.stringify(payload),
       });
       setEditing(null);
-      onNotice?.('Товар сохранён');
+      onNotice?.(payload.isActive ? 'Товар сохранён и опубликован' : 'Товар сохранён как черновик');
       await load();
     } catch (saveError) {
       setError(saveError.message);
@@ -77,6 +100,7 @@ const AdminCatalogTab = ({ onNotice }) => {
     <div>
       <div className="admin-toolbar">
         <div className="admin-toolbar__row">
+          <button type="button" className="btn" onClick={openNew}>Добавить товар</button>
           <input
             type="search"
             className="admin-toolbar__search"
@@ -95,8 +119,7 @@ const AdminCatalogTab = ({ onNotice }) => {
           </select>
         </div>
         <p className="admin-summary">
-          «Скрыт» — товар не показывается на сайте. Майнеры должны быть «В продаже» и категория «Майнинг».
-          После обновления сервера все Antminer включаются автоматически.
+          Товар без цены, остатка или фото не появится в корзине. Публикация доступна после заполнения обязательных характеристик.
         </p>
       </div>
       {error && <p className="admin-error" role="alert">{error}</p>}
@@ -108,6 +131,7 @@ const AdminCatalogTab = ({ onNotice }) => {
               <th>Категория</th>
               <th>Название</th>
               <th>Цена</th>
+              <th>Остаток</th>
               <th>Статус</th>
               <th />
             </tr>
@@ -119,6 +143,7 @@ const AdminCatalogTab = ({ onNotice }) => {
                 <td>{categoryLabels[product.category] || product.category}</td>
                 <td>{product.title}</td>
                 <td>{formatOrderTotal({ total: product.price, currency: product.currency })}</td>
+                <td>{product.stock == null ? 'Не задан' : product.stock}</td>
                 <td>{product.isActive ? 'В продаже' : 'Скрыт'}</td>
                 <td>
                   <button type="button" className="btn-outline admin-table__detail" onClick={() => openEdit(product)}>
@@ -137,14 +162,22 @@ const AdminCatalogTab = ({ onNotice }) => {
         <div className="admin-modal-overlay" onClick={() => setEditing(null)} role="presentation">
           <div className="admin-modal" onClick={(event) => event.stopPropagation()} role="dialog">
             <header className="admin-modal__header">
-              <h2>Редактирование · {editing}</h2>
+              <h2>{editing === 'new' ? 'Новый товар' : `Редактирование · ${editing}`}</h2>
               <button type="button" className="admin-modal__close" onClick={() => setEditing(null)} aria-label="Закрыть">✕</button>
             </header>
             <div className="admin-modal__body admin-form">
+              <label>Категория<select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="miner">Майнинг</option><option value="computer">ПК / серверы</option><option value="other">Другое</option></select></label>
               <label>Название<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
+              <label>Артикул SKU<input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} /></label>
+              <label>Слаг ссылки<input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></label>
               <label>Цена (USD)<input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></label>
+              <label>Остаток (шт.)<input type="number" min="0" step="1" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></label>
               <label>URL изображения<input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} /></label>
+              <label>Дополнительные изображения (по одному URL на строку)<textarea rows={3} value={form.images} onChange={(e) => setForm({ ...form, images: e.target.value })} /></label>
               <label>Описание<textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+              <label>Гарантия<input value={form.warranty} onChange={(e) => setForm({ ...form, warranty: e.target.value })} /></label>
+              <label>Срок поставки<input value={form.shippingTime} onChange={(e) => setForm({ ...form, shippingTime: e.target.value })} /></label>
+              <label>Характеристики (JSON)<textarea rows={11} value={form.metadata} onChange={(e) => setForm({ ...form, metadata: e.target.value })} /><small className="admin-muted">Для публикации укажите brand, model; для майнера также algorithm, coins, hashrate, power, noise, size и weight.</small></label>
               <label className="admin-checkbox">
                 <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
                 Показывать на сайте

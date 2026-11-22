@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     ports:
       # 5434 — отдельный порт (5432/5433 часто заняты на Windows)
-      - "5434:5432"
+      - "127.0.0.1:5434:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-saytpraktika}
       POSTGRES_USER: ${POSTGRES_USER:-saytpraktika_app}
@@ -16,6 +16,24 @@ services:
       timeout: 5s
       retries: 12
 
+  db-backup:
+    image: postgres:16-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-saytpraktika}
+      POSTGRES_USER: ${POSTGRES_USER:-saytpraktika_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      BACKUP_DIRECTORY: /backups
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - ./deploy/postgres-backup-worker.sh:/usr/local/bin/postgres-backup-worker.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/postgres-backup-worker.sh"]
+    restart: unless-stopped
+
   web:
     build:
       context: .
@@ -24,7 +42,6 @@ services:
         REACT_APP_MAX_CHAT_URL: ${REACT_APP_MAX_CHAT_URL:-}
         REACT_APP_LEAD_API_URL: ${REACT_APP_LEAD_API_URL:-/api/leads}
         REACT_APP_YANDEX_MAPS_API_KEY: ${REACT_APP_YANDEX_MAPS_API_KEY:-}
-        REACT_APP_AUTH_PEPPER: ${REACT_APP_AUTH_PEPPER:-}
         REACT_APP_YANDEX_METRIKA_ID: ${REACT_APP_YANDEX_METRIKA_ID:-}
     ports:
       - "8080:8080"

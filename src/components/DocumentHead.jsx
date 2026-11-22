@@ -16,8 +16,8 @@ const ROUTE_META = {
     description: 'Создание сайтов, маркетплейсов и интеграций под ключ.',
   },
   '/products': {
-    title: `Продукты | ${SITE}`,
-    description: 'Готовые решения и продукты для digital и crypto.',
+    title: `Товары и майнинг-оборудование | ${SITE}`,
+    description: 'Майнинг-оборудование, компьютеры и серверы в едином каталоге.',
   },
   '/crypto': {
     title: `Конвертер криптовалют | ${SITE}`,
@@ -60,6 +60,12 @@ const ROUTE_META = {
 const DocumentHead = () => {
   const { pathname } = useLocation();
   const meta = ROUTE_META[pathname] || DEFAULT;
+  const isPrivate = ['/admin', '/cart', '/profile'].includes(pathname);
+  const isKnown = Boolean(ROUTE_META[pathname] || /^\/(?:mining|products)\/[^/]+$/.test(pathname));
+  const canonical = isKnown && !isPrivate && typeof window !== 'undefined'
+    && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    ? `${window.location.origin}${pathname}`
+    : null;
 
   return (
     <Helmet>
@@ -69,6 +75,9 @@ const DocumentHead = () => {
       <meta property="og:title" content={meta.title} />
       <meta property="og:description" content={meta.description} />
       <meta property="og:type" content="website" />
+      {!isKnown && <meta name="robots" content="noindex, nofollow" />}
+      {isPrivate && <meta name="robots" content="noindex, nofollow" />}
+      {canonical && <link rel="canonical" href={canonical} />}
     </Helmet>
   );
 };

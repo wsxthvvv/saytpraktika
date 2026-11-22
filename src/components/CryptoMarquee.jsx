@@ -15,19 +15,19 @@ const CryptoMarquee = () => {
 
   const btcUsd = simple?.bitcoin?.usd ?? null;
   const ethUsd = simple?.ethereum?.usd ?? null;
-  const btcChange = simple?.bitcoin?.usd_24h_change ?? 0;
-  const ethChange = simple?.ethereum?.usd_24h_change ?? 0;
+  const btcChange = simple?.bitcoin?.usd_24h_change ?? null;
+  const ethChange = simple?.ethereum?.usd_24h_change ?? null;
   const btcEth = btcUsd && ethUsd ? (btcUsd / ethUsd).toFixed(4) : null;
 
   const items = [
     {
       label: 'BTC/USD',
-      value: btcUsd ? `$${btcUsd.toLocaleString()}` : '—',
+      value: btcUsd ? `$${btcUsd.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—',
       change: btcChange,
     },
     {
       label: 'ETH/USD',
-      value: ethUsd ? `$${ethUsd.toLocaleString()}` : '—',
+      value: ethUsd ? `$${ethUsd.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—',
       change: ethChange,
     },
     {
@@ -41,7 +41,10 @@ const CryptoMarquee = () => {
 
   const updatedLabel = updatedAt
     ? `Обновлено ${new Date(updatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
-    : 'Ожидаем данные';
+    : error ? 'Курсы временно недоступны' : 'Ожидаем данные';
+  const sourceLabel = error
+    ? updatedAt ? `Данные из кэша · ${updatedLabel}` : 'Курсы пока не получены; попробуйте позже'
+    : updatedLabel;
 
   return (
     <div className={`crypto-marquee${stale || error ? ' crypto-marquee--stale' : ''}`}>
@@ -57,8 +60,9 @@ const CryptoMarquee = () => {
           </span>
         ))}
         <span className="crypto-marquee__status" title={error ? 'Источник временно недоступен' : undefined}>
-          {error ? 'Данные из кэша' : updatedLabel}
+          {sourceLabel}
         </span>
+        <span className="crypto-marquee__status">Котировки справочные и не являются инвестиционной рекомендацией</span>
       </div>
     </div>
   );

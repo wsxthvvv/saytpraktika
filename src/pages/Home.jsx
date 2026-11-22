@@ -3,8 +3,8 @@ import AnimatedBackground from '../components/AnimatedBackground';
 import Technologies from '../components/Technologies';
 import FAQ from '../components/FAQ';
 import Testimonials from '../components/Testimonials';
-import AnimatedCounter from '../components/AnimatedCounter';
 import RbcNewsFeed from '../components/RbcNewsFeed';
+import MarketOverview from '../components/MarketOverview';
 
 const Home = () => {
   return (
@@ -34,61 +34,53 @@ const Home = () => {
         </div>
         <div className="hero__stats">
           <div className="hero__stat">
-            <span className="hero__stat-number">
-              <AnimatedCounter value="48+" />
-            </span>
-            <span className="hero__stat-label">Запущенных проектов</span>
+            <span className="hero__stat-number">8</span>
+            <span className="hero__stat-label">Услуг разработки</span>
           </div>
           <div className="hero__stat">
-            <span className="hero__stat-number">
-              <AnimatedCounter value="3.5x" />
-            </span>
-            <span className="hero__stat-label">Средний рост лидов</span>
+            <span className="hero__stat-number">USD</span>
+            <span className="hero__stat-label">Цены оборудования</span>
           </div>
           <div className="hero__stat">
-            <span className="hero__stat-number">24/7</span>
-            <span className="hero__stat-label">Поддержка в Telegram</span>
+            <span className="hero__stat-number">1 мин</span>
+            <span className="hero__stat-label">Обновление курсов</span>
           </div>
         </div>
       </section>
 
-      <section className="ticker" aria-hidden="true">
-        <div className="ticker__inner">
-          <span>UI/UX DESIGN</span>
-          <span>DEFI & NFT</span>
-          <span>SMART CONTRACT INTEGRATION</span>
-          <span>MARKETPLACE</span>
-          <span>CUSTOM DASHBOARD</span>
+      <section className="home-process" aria-labelledby="home-process-title">
+        <div className="home-process__intro">
+          <p className="section-eyebrow">ПРОСТОЙ ПОРЯДОК</p>
+          <h2 id="home-process-title" className="section-title">Как начать</h2>
+          <p>Услуги выберите на сайте, заявку оформите через Telegram. Майнеры находятся в разделе «Товары».</p>
         </div>
-        <div className="ticker__inner" aria-hidden="true">
-          <span>UI/UX DESIGN</span>
-          <span>DEFI & NFT</span>
-          <span>SMART CONTRACT INTEGRATION</span>
-          <span>MARKETPLACE</span>
-          <span>CUSTOM DASHBOARD</span>
+        <div className="home-process__steps">
+          <article className="home-process__step"><span>01</span><h3>Выберите услугу</h3><p>Посмотрите, что входит в работу, и выберите направление разработки.</p></article>
+          <article className="home-process__step"><span>02</span><h3>Опишите задачу</h3><p>Бот соберёт контакты и описание, а заявка появится в системе сайта.</p></article>
+          <article className="home-process__step"><span>03</span><h3>Согласуйте условия</h3><p>Менеджер уточнит объём работ, сроки и стоимость до начала проекта.</p></article>
         </div>
+        <Link to="/products?category=miner" className="home-process__equipment-link">Смотреть майнеры в товарах →</Link>
       </section>
+
+      <MarketOverview />
 
       <section className="panels">
         <article className="panel-card">
-          <h3>Модульная архитектура</h3>
+          <h3>Разработка сайта</h3>
           <p>
-            Подключаем экосистему аналитики, CMS, платежей и фиат/крипто шлюзов. Растете —
-            масштабируете без боли.
+            Подберём состав работ для нового сайта, доработки существующего проекта или интеграции с API.
           </p>
         </article>
         <article className="panel-card">
-          <h3>Прозрачная крипто-конвертация</h3>
+          <h3>Подбор оборудования</h3>
           <p>
-            Точность курса из CoinGecko и резервный источник. Подсветка важных скачков и push
-            уведомления.
+            В карточках каталога показываются подтверждённые цена, наличие, характеристики и гарантия.
           </p>
         </article>
         <article className="panel-card">
-          <h3>Коммуникация в одном окне</h3>
+          <h3>Понятная заявка</h3>
           <p>
-            Telegram-бот подключается к вашему кабинету. Храните историю, поддерживайте клиентов
-            прямо на сайте.
+            Заявки на разработку принимаются через Telegram-бота и сохраняются в панели управления.
           </p>
         </article>
       </section>
