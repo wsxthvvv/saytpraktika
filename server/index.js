@@ -22,6 +22,8 @@ const { mapProductRow } = require('./productMap');
 const { getCoinMetrics, getCryptoMarkets, getHistoricalPrices, getUsdRubRate } = require('./cryptoMarkets');
 const OPENAPI_SPEC = require('./openapi.json');
 const { startTelegramBot } = require('./telegramSalesBot');
+const { listOffers, getOfferById, loadServicesCatalog } = require('./servicesCatalog');
+const { seedBlogPosts } = require('./blogSeed');
 
 const PORT = Number(process.env.PORT || 3001);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -70,7 +72,7 @@ const readJsonBody = (req) => new Promise((resolve, reject) => {
 const setCors = (req, res) => {
   const origin = req.headers.origin;
   if (!origin) return;
-  if (ALLOWED_ORIGINS.includes(origin)) {
+  if (ALLOWED_ORIGINS.includes(origin) || originMatchesRequestHost(req, origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
@@ -79,10 +81,25 @@ const setCors = (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Request-ID');
 };
 
+const requestHost = (req) => String(req.headers.host || '').split(',')[0].trim().toLowerCase();
+
+const originMatchesRequestHost = (req, originHeader) => {
+  try {
+    return new URL(originHeader).host.toLowerCase() === requestHost(req);
+  } catch {
+    return false;
+  }
+};
+
 const checkMutationOrigin = (req) => {
   if (!['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method)) return true;
   const origin = req.headers.origin;
-  if (origin) return ALLOWED_ORIGINS.includes(origin);
+  if (origin) {
+    if (ALLOWED_ORIGINS.includes(origin)) return true;
+    // Сайт и API на одном порту (Docker :8080, VPS) — браузер шлёт Origin, его нет в CORS_ORIGINS dev :3000
+    if (originMatchesRequestHost(req, origin)) return true;
+    return false;
+  }
   if (process.env.NODE_ENV !== 'production') return true;
   return String(req.headers['sec-fetch-site'] || '').toLowerCase() === 'same-origin'
     && /^application\/json(?:\s*;|$)/i.test(String(req.headers['content-type'] || ''));
@@ -157,6 +174,7 @@ const mapLead = (row) => ({
   comments: row.comments,
   total: row.total == null ? null : Number(row.total),
   itemsSummary: row.items_summary,
+  metadata: row.metadata || {},
   statusCode: row.status,
   status: statusLabel[row.status] || row.status,
   createdAt: row.created_at,
@@ -311,6 +329,13 @@ const createLead = async (body, userId = null, source = 'website', dbQuery = que
   }
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw Object.assign(new Error('Проверьте адрес email'), { statusCode: 400, code: 'INVALID_EMAIL' });
   if (String(body.comments || '').length > 2000 || String(body.topic || '').length > 200) throw Object.assign(new Error('Проверьте длину темы и комментария'), { statusCode: 400, code: 'FIELD_TOO_LONG' });
+  const serviceId = body.serviceId == null ? null : Number(body.serviceId);
+  const metadata = {
+    serviceId: Number.isFinite(serviceId) ? serviceId : null,
+    serviceKind: clip(body.serviceKind, 32) || null,
+    serviceCategory: clip(body.serviceCategory, 40) || null,
+    direction: clip(body.direction, 40) || null,
+  };
   const lead = {
     id: crypto.randomUUID(),
     userId,
@@ -326,12 +351,13 @@ const createLead = async (body, userId = null, source = 'website', dbQuery = que
     total: body.total === '' || body.total == null ? null : Number(body.total),
     itemsSummary: clip(body.itemsSummary, 2000),
     source: ['website', 'telegram'].includes(source) ? source : 'website',
+    metadata,
   };
   const result = await dbQuery(
-    `INSERT INTO leads (id, user_id, type, name, phone, email, topic, address, delivery_date, delivery_time, comments, total, items_summary, source, consent_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+    `INSERT INTO leads (id, user_id, type, name, phone, email, topic, address, delivery_date, delivery_time, comments, total, items_summary, source, consent_at, metadata)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
     [lead.id, lead.userId, lead.type, lead.name, lead.phone, lead.email, lead.topic, lead.address,
-      lead.deliveryDate, lead.deliveryTime, lead.comments, Number.isFinite(lead.total) ? lead.total : null, lead.itemsSummary, lead.source, consentAt],
+      lead.deliveryDate, lead.deliveryTime, lead.comments, Number.isFinite(lead.total) ? lead.total : null, lead.itemsSummary, lead.source, consentAt, JSON.stringify(lead.metadata)],
   );
   const savedLead = mapLead(result.rows[0]);
   await dbQuery(
@@ -674,12 +700,16 @@ const server = http.createServer(async (req, res) => {
   const pathname = url.pathname;
 
   try {
+    const legacyRedirects = {
+      '/it-outsourcing': '/it',
+      '/calculator': '/services?kind=corporate',
+    };
+    if (req.method === 'GET' && legacyRedirects[pathname]) {
+      res.writeHead(301, { Location: legacyRedirects[pathname] });
+      return res.end();
+    }
     if (!checkMutationOrigin(req)) {
       return sendJson(res, 403, { ok: false, code: 'ORIGIN_FORBIDDEN', error: 'Запрос с этого источника запрещён' });
-    }
-    if (pathname === '/blog' || pathname.startsWith('/blog/')) {
-      if (tryServeStatic(req, res, 404)) return;
-      return sendJson(res, 404, { ok: false, code: 'NOT_FOUND', error: 'Страница не найдена' });
     }
     if (req.method === 'GET' && pathname === '/robots.txt') {
       const origin = publicOrigin(req);
@@ -688,11 +718,16 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === 'GET' && pathname === '/sitemap.xml') {
       const origin = publicOrigin(req);
-      const paths = ['/', '/services', '/products', '/crypto', '/charts', '/news', '/privacy', '/consent'];
+      const paths = ['/', '/services', '/products', '/crypto', '/charts', '/news', '/privacy', '/consent', '/blog', '/it', '/accounting', '/ai', '/mining-services'];
       const products = await query("SELECT category,COALESCE(slug,id) slug,updated_at FROM products WHERE category IN ('miner','computer') AND is_active=TRUE AND currency='USD' AND price>0 AND stock IS NOT NULL AND NULLIF(BTRIM(sku),'') IS NOT NULL AND NULLIF(BTRIM(image),'') IS NOT NULL AND NULLIF(BTRIM(metadata->>'brand'),'') IS NOT NULL AND NULLIF(BTRIM(metadata->>'model'),'') IS NOT NULL AND (category <> 'miner' OR (NULLIF(BTRIM(metadata->>'algorithm'),'') IS NOT NULL AND NULLIF(BTRIM(metadata->>'coins'),'') IS NOT NULL AND NULLIF(BTRIM(metadata->>'hashrate'),'') IS NOT NULL AND NULLIF(BTRIM(metadata->>'power'),'') IS NOT NULL AND NULLIF(BTRIM(metadata->>'noise'),'') IS NOT NULL AND NULLIF(BTRIM(metadata->>'size'),'') IS NOT NULL AND NULLIF(BTRIM(metadata->>'weight'),'') IS NOT NULL)) ORDER BY updated_at DESC");
+      const blogRows = await query('SELECT slug, updated_at FROM blog_posts WHERE is_published = TRUE ORDER BY published_at DESC NULLS LAST, id DESC').catch(() => ({ rows: [] }));
       const urls = paths.map((path) => `<url><loc>${xmlEscape(origin + path)}</loc></url>`);
       products.rows.forEach((product) => {
         urls.push(`<url><loc>${xmlEscape(`${origin}/products/${encodeURIComponent(product.slug)}`)}</loc><lastmod>${new Date(product.updated_at).toISOString().slice(0, 10)}</lastmod></url>`);
+      });
+      blogRows.rows.forEach((post) => {
+        const lastmod = post.updated_at ? new Date(post.updated_at).toISOString().slice(0, 10) : null;
+        urls.push(`<url><loc>${xmlEscape(`${origin}/blog/${encodeURIComponent(post.slug)}`)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`);
       });
       res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
       return res.end(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join('')}</urlset>`);
@@ -718,6 +753,54 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && pathname === '/api/reviews') {
       const rate = checkRouteRateLimit(req, 'review', 10, 60 * 60 * 1000);
       if (!rate.allowed) return sendJson(res, 429, { ok: false, error: `Слишком много отзывов. Повторите через ${rate.retryAfterSec} с.` });
+    }
+    if (req.method === 'GET' && pathname === '/api/services') {
+      const kind = clip(url.searchParams.get('kind'), 20) || undefined;
+      const category = clip(url.searchParams.get('category'), 40) || undefined;
+      const direction = clip(url.searchParams.get('direction'), 40) || undefined;
+      const offers = listOffers({ kind, category, direction });
+      return sendJson(res, 200, { ok: true, version: loadServicesCatalog().version, offers });
+    }
+    if (req.method === 'GET' && pathname.startsWith('/api/services/')) {
+      const offer = getOfferById(pathname.split('/').pop());
+      if (!offer) return sendJson(res, 404, { ok: false, code: 'NOT_FOUND', error: 'Услуга не найдена' });
+      return sendJson(res, 200, { ok: true, offer });
+    }
+    if (req.method === 'GET' && pathname === '/api/blog') {
+      const page = Math.max(1, Number(url.searchParams.get('page') || 1));
+      const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit') || 12)));
+      const category = clip(url.searchParams.get('category'), 40);
+      const values = [];
+      let where = 'WHERE is_published = TRUE';
+      if (category) {
+        values.push(category);
+        where += ` AND category = $${values.length}`;
+      }
+      const offset = (page - 1) * limit;
+      values.push(limit, offset);
+      const posts = await query(
+        `SELECT id, legacy_id AS "legacyId", slug, category, title, excerpt, tags, published_at AS date
+         FROM blog_posts ${where} ORDER BY published_at DESC NULLS LAST, id DESC LIMIT $${values.length - 1} OFFSET $${values.length}`,
+        values,
+      );
+      const total = await query(`SELECT COUNT(*)::int AS count FROM blog_posts ${where}`, category ? [category] : []);
+      return sendJson(res, 200, {
+        ok: true,
+        posts: posts.rows,
+        total: total.rows[0].count,
+        page,
+        limit,
+      });
+    }
+    if (req.method === 'GET' && pathname.startsWith('/api/blog/')) {
+      const slugOrId = decodeURIComponent(pathname.slice('/api/blog/'.length));
+      const bySlug = await query(
+        `SELECT id, legacy_id AS "legacyId", slug, category, title, excerpt, body, tags, published_at AS date
+         FROM blog_posts WHERE slug = $1 OR legacy_id::text = $1 OR id::text = $1 LIMIT 1`,
+        [slugOrId],
+      );
+      if (!bySlug.rowCount) return sendJson(res, 404, { ok: false, code: 'NOT_FOUND', error: 'Статья не найдена' });
+      return sendJson(res, 200, { ok: true, post: bySlug.rows[0] });
     }
     if (req.method === 'GET' && pathname === '/api/health') {
       await query('SELECT 1');
@@ -1470,6 +1553,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 initDb()
+  .then(() => seedBlogPosts(query))
   .then(() => {
     startNotificationWorker();
     telegramBot = startTelegramBot({ pool, query, createLead, processNotificationOutbox });

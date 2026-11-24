@@ -1,0 +1,585 @@
+/* Страница «Инвестиции» — по мотивам 01-service.ru в палитре сайта */
+
+.invest-page {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+  padding-bottom: 1rem;
+}
+
+.invest-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: clamp(1.25rem, 3vw, 2rem);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-radius: 24px;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 90% 70% at 100% 0%, rgba(var(--brand-red-rgb), 0.22), transparent 52%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(var(--brand-red-rgb), 0.08), transparent 48%),
+    linear-gradient(135deg, var(--bg-card) 0%, var(--bg-light) 100%);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.invest-badge {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #fff;
+  background: var(--red);
+}
+
+.invest-hero__title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.65rem, 4vw, 2.35rem);
+  line-height: 1.2;
+}
+
+.invest-hero__accent {
+  color: var(--red);
+}
+
+.invest-hero__lead {
+  margin: 0 0 1.25rem;
+  max-width: 52ch;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.invest-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.invest-key-terms {
+  align-self: start;
+  padding: 1.15rem 1.25rem;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.invest-key-terms h2 {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+}
+
+.invest-key-terms dl {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.invest-key-terms__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+}
+
+.invest-key-terms dt {
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.invest-key-terms dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.invest-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: -0.5rem;
+}
+
+.invest-stats__item {
+  padding: 1.1rem 1rem;
+  text-align: center;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.invest-stats__item strong {
+  display: block;
+  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+  color: var(--red);
+  margin-bottom: 0.25rem;
+}
+
+.invest-stats__item span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.invest-section__title {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  color: var(--red);
+}
+
+.invest-section__subtitle {
+  margin: 0.35rem auto 1.35rem;
+  max-width: 46ch;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.invest-advantages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.invest-adv-card {
+  padding: 1.25rem;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  display: grid;
+  gap: 0.5rem;
+}
+
+.invest-adv-card__icon {
+  font-size: 1.35rem;
+}
+
+.invest-adv-card h3 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.invest-adv-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.invest-calculator {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: 24px;
+  background: var(--bg-light);
+  border: 2px solid var(--border);
+}
+
+.invest-calculator__head h2 {
+  margin: 0;
+  color: var(--red);
+  font-size: 1.35rem;
+}
+
+.invest-calculator__head p {
+  margin: 0.35rem 0 1.25rem;
+  color: var(--text-muted);
+}
+
+.invest-calculator__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
+  gap: 1.25rem;
+}
+
+.invest-calculator__form {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+}
+
+.invest-range {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.invest-range__label {
+  font-size: 0.92rem;
+}
+
+.invest-range__label strong {
+  color: var(--red);
+}
+
+.invest-range input[type='range'] {
+  width: 100%;
+  accent-color: var(--red);
+}
+
+.invest-range__hints {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.invest-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.65rem 1rem;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  font: inherit;
+}
+
+.invest-calculator__submit {
+  width: 100%;
+}
+
+.invest-calculator__result {
+  padding: 1.35rem;
+  border-radius: 18px;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 90% 80% at 100% 0%, rgba(var(--brand-red-rgb), 0.14), transparent 55%),
+    var(--bg-card);
+  border: 2px solid rgba(var(--brand-red-rgb), 0.25);
+  box-shadow: 0 8px 28px rgba(var(--brand-red-rgb), 0.1);
+  display: grid;
+  gap: 0.65rem;
+}
+
+.invest-calculator__result h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.invest-result-line {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.invest-result-line--green strong {
+  color: #15803d;
+}
+
+.invest-result-total {
+  margin: 0.35rem 0 0;
+  font-size: 1rem;
+}
+
+.invest-result-total strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  color: var(--red);
+}
+
+.invest-calculator__note {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.invest-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.invest-step {
+  display: grid;
+  gap: 0.65rem;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+}
+
+.invest-step__num {
+  justify-self: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font-weight: 800;
+}
+
+.invest-step h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.invest-step p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.invest-table-wrap {
+  overflow-x: auto;
+  border-radius: 18px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+}
+
+.invest-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.invest-table th,
+.invest-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.invest-table thead th {
+  background: var(--bg-light);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.invest-table tbody tr:last-child th,
+.invest-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.invest-table__yield {
+  font-weight: 800;
+  color: var(--red);
+  white-space: nowrap;
+}
+
+.invest-guarantees {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.invest-guarantee-card {
+  padding: 1.25rem;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+}
+
+.invest-guarantee-card h3 {
+  margin: 0 0 0.65rem;
+  color: var(--red);
+  font-size: 1.05rem;
+}
+
+.invest-guarantee-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.invest-reviews {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.invest-review-card {
+  margin: 0;
+  padding: 1.25rem;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  display: grid;
+  gap: 1rem;
+  min-height: 100%;
+}
+
+.invest-review-card__quote {
+  margin: 0;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.invest-review-card__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.invest-review-card cite {
+  font-style: normal;
+  font-weight: 800;
+  display: block;
+}
+
+.invest-review-card__deposit {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.invest-review-card__profit {
+  margin: 0;
+  text-align: right;
+  font-weight: 800;
+  color: var(--red);
+  font-size: 1.05rem;
+}
+
+.invest-review-card__profit span {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.invest-faq__list {
+  max-width: 820px;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.invest-faq__item {
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.invest-faq__trigger {
+  width: 100%;
+  padding: 1rem 2.5rem 1rem 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+}
+
+.invest-faq__trigger::after {
+  content: '▾';
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--red);
+  transition: transform 0.2s ease;
+}
+
+.invest-faq__item.is-open .invest-faq__trigger::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.invest-faq__panel {
+  padding: 0 1rem 1rem;
+}
+
+.invest-faq__panel p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+.invest-cta {
+  text-align: center;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-radius: 24px;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 85% 70% at 50% 0%, rgba(var(--brand-red-rgb), 0.18), transparent 58%),
+    linear-gradient(180deg, var(--red-light) 0%, var(--bg-card) 100%);
+  border: 2px solid rgba(var(--brand-red-rgb), 0.22);
+  box-shadow: var(--shadow);
+}
+
+.invest-cta h2 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  color: var(--text);
+}
+
+.invest-cta p {
+  margin: 0 0 1.25rem;
+  color: var(--text-muted);
+}
+
+.invest-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 960px) {
+  .invest-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .invest-advantages,
+  .invest-guarantees,
+  .invest-reviews {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .invest-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .invest-calculator__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .invest-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .invest-advantages,
+  .invest-guarantees,
+  .invest-reviews,
+  .invest-steps {
+    grid-template-columns: 1fr;
+  }
+}

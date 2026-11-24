@@ -12,6 +12,7 @@ import {
   reviewLabels,
   formatAdminDate,
   leadTypeLabel,
+  formatLeadServiceMeta,
   formatOrderTotal,
   downloadCsv,
   adminApi,
@@ -359,6 +360,7 @@ const AdminPanel = () => {
       { label: 'Имя', value: (row) => row.name },
       { label: 'Телефон', value: (row) => row.phone },
       { label: 'Email', value: (row) => row.email },
+      { label: 'Тема / услуга', value: (row) => formatLeadServiceMeta(row) },
       { label: 'Комментарий', value: (row) => row.comments || row.itemsSummary || '' },
     ]);
   };
@@ -540,6 +542,9 @@ const AdminPanel = () => {
                         <div><span>Email</span><strong>{lead.email || '—'}</strong></div>
                         <div><span>Статус</span><strong>{lead.status}</strong></div>
                       </div>
+                      {formatLeadServiceMeta(lead) && (
+                        <p className="admin-muted"><strong>Услуга:</strong> {formatLeadServiceMeta(lead)}</p>
+                      )}
                       {(lead.comments || lead.itemsSummary) && (
                         <p>{lead.comments || lead.itemsSummary}</p>
                       )}
@@ -587,6 +592,9 @@ const AdminPanel = () => {
                       <div><span>Email</span><strong>{lead.email || '—'}</strong></div>
                       <div><span>Адрес</span><strong>{lead.address || '—'}</strong></div>
                     </div>
+                    {formatLeadServiceMeta(lead) && (
+                      <p className="admin-muted"><strong>Услуга:</strong> {formatLeadServiceMeta(lead)}</p>
+                    )}
                     {(lead.comments || lead.itemsSummary) && (
                       <p><strong>Текст:</strong> {lead.comments || lead.itemsSummary}</p>
                     )}

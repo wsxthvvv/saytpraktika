@@ -1,8 +1,6 @@
-const fs = require('fs');
-const path = require('path');
+const { listTelegramServices, getOfferById } = require('./servicesCatalog');
 
-const catalogPath = path.join(__dirname, '..', 'src', 'data', 'serviceCatalog.json');
-const services = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+const services = listTelegramServices();
 const serviceById = new Map(services.map((service) => [String(service.id), service]));
 
 const clip = (value, max = 2000) => String(value ?? '').trim().slice(0, max);
@@ -45,7 +43,7 @@ const startTelegramBot = ({ pool, query, createLead, processNotificationOutbox }
   });
   const keyboard = (rows) => ({ inline_keyboard: rows });
   const serviceKeyboard = () => keyboard(services.map((service) => ([{
-    text: service.title, callback_data: `service:${service.id}`,
+    text: service.title.slice(0, 60), callback_data: `service:${service.id}`,
   }])));
   const showCatalog = async (chatId, prefix = '') => send(chatId,
     `${prefix ? `${prefix}\n\n` : ''}Выберите услугу. Стоимость и состав работ менеджер согласует после описания задачи.\n\nМайнеры продаются на сайте: ${publicSiteUrl}/products`,
@@ -58,7 +56,7 @@ const startTelegramBot = ({ pool, query, createLead, processNotificationOutbox }
   ]);
   const askConsent = async (chatId, service) => {
     await saveChat(chatId, 'awaiting_consent', { serviceId: service.id });
-    return send(chatId, `Вы выбрали: ${service.title}.\n\nПеред заявкой ознакомьтесь с документами и подтвердите согласие на обработку персональных данных.`, {
+    return send(chatId, `Вы выбрали: ${service.shortTitle || service.title}.\n\nПеред заявкой ознакомьтесь с документами и подтвердите согласие на обработку персональных данных.`, {
       reply_markup: consentKeyboard(service.id),
     });
   };
@@ -136,9 +134,18 @@ const startTelegramBot = ({ pool, query, createLead, processNotificationOutbox }
         try {
           await client.query('BEGIN');
           const dbQuery = (sql, values) => client.query(sql, values);
+          const catalogOffer = getOfferById(service.id);
           lead = await createLead({
-            type: 'telegram_service', topic: service.title, name: session.data.name,
-            phone: session.data.phone, comments: text, itemsSummary: `Услуга: ${service.title}`,
+            type: catalogOffer?.kind === 'corporate' ? 'corporate_service' : 'telegram_service',
+            topic: service.shortTitle || service.title,
+            name: session.data.name,
+            phone: session.data.phone,
+            comments: text,
+            itemsSummary: `Услуга #${service.id}: ${service.shortTitle || service.title}`,
+            serviceId: service.id,
+            serviceKind: catalogOffer?.kind || 'dev',
+            serviceCategory: catalogOffer?.category || '',
+            direction: catalogOffer?.direction || '',
             consent: true,
           }, null, 'telegram', dbQuery);
           await saveChat(chatId, 'submitted', { leadNumber: lead.leadNumber }, dbQuery);

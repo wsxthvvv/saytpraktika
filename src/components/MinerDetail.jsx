@@ -5,6 +5,28 @@ import Testimonials from './Testimonials';
 import { formatUsd } from '../utils/currency';
 import ServiceLeadModal from './ServiceLeadModal';
 import { Helmet } from 'react-helmet-async';
+import ProductImage from './ProductImage';
+
+const MINER_SPEC_ROWS = [
+  ['Алгоритм', 'algorithm'],
+  ['Монеты', 'coins'],
+  ['Хешрейт', 'hashrate'],
+  ['Потребление', 'power'],
+  ['Шум', 'noise'],
+  ['Размер', 'size'],
+  ['Вес', 'weight'],
+  ['Бренд', 'brand'],
+  ['Модель', 'model'],
+  ['Эффективность', 'efficiency'],
+  ['Серия', 'badge'],
+];
+
+const readSpec = (product, key) => {
+  const meta = product?.metadata && typeof product.metadata === 'object' ? product.metadata : {};
+  const value = meta[key] ?? product?.[key];
+  if (value == null || value === '') return null;
+  return String(value);
+};
 
 const MinerDetail = () => {
   const { id } = useParams();
@@ -33,14 +55,10 @@ const MinerDetail = () => {
   if (loading) return <p className="route-loading" role="status">Загружаем карточку…</p>;
   if (!product) return <div className="profile-section"><h1 className="section-title">{error || 'Товар не найден'}</h1><Link to="/products" className="btn">Вернуться в каталог</Link></div>;
 
-  const metadata = product.metadata || product;
   const catalogPath = '/products';
-  const characteristics = [
-    ['Алгоритм', metadata.algorithm], ['Монеты', metadata.coins], ['Хешрейт', metadata.hashrate],
-    ['Потребление', metadata.power], ['Шум', metadata.noise], ['Размер', metadata.size], ['Вес', metadata.weight],
-    ...Object.entries(metadata).filter(([key, value]) => !['algorithm', 'coins', 'hashrate', 'power', 'noise', 'size', 'weight', 'previousPrice'].includes(key)
-      && value != null && value !== '' && typeof value !== 'object').map(([key, value]) => [key, value]),
-  ].filter(([, value]) => value);
+  const characteristics = MINER_SPEC_ROWS
+    .map(([label, key]) => [label, readSpec(product, key)])
+    .filter(([, value]) => value);
 
   return (
     <>
@@ -54,8 +72,13 @@ const MinerDetail = () => {
         <div className="miner-detail-breadcrumbs"><Link to={catalogPath}>Каталог</Link><span> / </span><span>{product.title}</span></div>
         <div className="miner-detail-container">
           <div className="miner-detail-left-column">
-            <div className="miner-image-main">{product.image ? <img src={product.image} alt={product.title} className="miner-detail-image" /> : <div className="miner-image-placeholder-large" aria-label="Фото не добавлено">Фото будет добавлено</div>}</div>
-            {product.images?.length > 0 && <div className="miner-detail-gallery">{product.images.map((image) => <img key={image} src={image} alt="" loading="lazy" decoding="async" />)}</div>}
+            <div className="miner-image-main">
+              {product.image ? (
+                <ProductImage src={product.image} alt={product.title} className="miner-detail-image" />
+              ) : (
+                <ProductImage src="/catalog/miner-default.svg" alt={product.title} className="miner-detail-image" />
+              )}
+            </div>
           </div>
           <div className="miner-detail-right-column">
             <h1 className="miner-detail-title">{product.title}</h1>
@@ -74,9 +97,33 @@ const MinerDetail = () => {
             {['description', 'specs', 'delivery'].map((item) => <button type="button" key={item} className={`tab-btn ${tab === item ? 'active' : ''}`} onClick={() => setTab(item)}>{item === 'description' ? 'Описание' : item === 'specs' ? 'Характеристики' : 'Гарантия и доставка'}</button>)}
           </div>
           <div className="tabs-content">
-            {tab === 'description' && <div><p>{product.description || 'Описание товара уточняется менеджером.'}</p></div>}
-            {tab === 'specs' && <div className="specs-grid">{characteristics.length ? characteristics.map(([label, value]) => <div className="spec-item" key={label}><span className="spec-label">{label}</span><span className="spec-value">{value}</span></div>) : <p>Характеристики ещё не добавлены.</p>}</div>}
-            {tab === 'delivery' && <div><p><strong>Гарантия:</strong> {product.warranty || 'Уточняется менеджером.'}</p><p><strong>Срок поставки:</strong> {product.shippingTime || 'Уточняется менеджером.'}</p></div>}
+            {tab === 'description' && (
+              <div className="miner-detail-description miner-description-content">
+                {(product.description || 'Описание товара уточняется менеджером.')
+                  .split(/\n{2,}|\r\n\r\n/)
+                  .map((block) => block.trim())
+                  .filter(Boolean)
+                  .map((paragraph) => (
+                    <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                  ))}
+              </div>
+            )}
+            {tab === 'specs' && (
+              <div className="specs-grid">
+                {characteristics.length ? characteristics.map(([label, value]) => (
+                  <div className="miner-spec-item" key={label}>
+                    <span className="spec-label">{label}</span>
+                    <span className="spec-value">{value}</span>
+                  </div>
+                )) : <p>Характеристики ещё не добавлены.</p>}
+              </div>
+            )}
+            {tab === 'delivery' && (
+              <div>
+                <p><strong>Гарантия:</strong> {product.warranty || readSpec(product, 'warranty') || 'Уточняется менеджером.'}</p>
+                <p><strong>Срок поставки:</strong> {product.shippingTime || readSpec(product, 'shipping') || 'Уточняется менеджером.'}</p>
+              </div>
+            )}
           </div>
         </div>
       </section>

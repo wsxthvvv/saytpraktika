@@ -13,7 +13,8 @@ export const reviewLabels = {
 };
 
 export const LEAD_TYPE_LABELS = {
-  service: 'Услуга',
+  service: 'Услуга (разработка)',
+  corporate_service: 'Корпоративная услуга',
   telegram_service: 'Услуга из Telegram',
   callback: 'Обратный звонок',
   order: 'Заказ с сайта',
@@ -23,6 +24,18 @@ export const LEAD_TYPE_LABELS = {
 export const formatAdminDate = (value) => (value ? new Date(value).toLocaleString('ru-RU') : '—');
 
 export const leadTypeLabel = (type) => LEAD_TYPE_LABELS[type] || type || 'Заявка';
+
+export const formatLeadServiceMeta = (lead) => {
+  const m = lead?.metadata || {};
+  const parts = [];
+  if (lead?.topic) parts.push(lead.topic);
+  if (m.serviceId != null) parts.push(`услуга #${m.serviceId}`);
+  if (m.serviceCategory) parts.push(m.serviceCategory);
+  if (m.serviceKind === 'corporate') parts.push('корпоратив');
+  else if (m.serviceKind === 'dev') parts.push('разработка');
+  if (m.direction) parts.push(m.direction);
+  return parts.length ? parts.join(' · ') : '';
+};
 
 export const formatOrderTotal = (order) => {
   if (!order) return '—';

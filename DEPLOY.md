@@ -31,6 +31,9 @@
 | `DATABASE_SSL` | `true` для облачного PostgreSQL с TLS |
 | `ADMIN_USERNAME` | логин администратора |
 | `ADMIN_PASSWORD_HASH` | bcrypt-хеш с cost 12 или выше; создаётся командой `npm run admin:hash-password -- "длинный-пароль"`. При записи в `.env` для Docker замените каждый `$` на `$$`. |
+| `PUBLIC_SITE_URL` | канонический адрес сайта (`https://ваш-домен.ru`) для sitemap, robots и ссылок в Telegram-боте; если пусто — берётся Host из запроса |
+
+После обновления `src/data/blogPosts.json`: перезапустите сервер с `BLOG_RESEED=true` (один раз), чтобы обновить тексты в PostgreSQL.
 
 Опционально: `PUBLIC_TELEGRAM_BOT_URL` (также можно сохранить ссылку в админ-панели), `MAX_WEBHOOK_URL`, `MAX_API_TOKEN`, `YANDEX_GEOCODER_API_KEY`, `CORS_ORIGINS` (только если API на **другом** домене, чем сайт).
 

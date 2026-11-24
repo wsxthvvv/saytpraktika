@@ -25,7 +25,10 @@ const Home = () => {
           </p>
           <div className="hero__cta">
             <Link to="/services" className="btn">
-              Заказать разработку
+              Все услуги
+            </Link>
+            <Link to="/blog" className="btn-outline">
+              Блог
             </Link>
             <Link to="/crypto" className="btn-outline">
               Курс криптовалют

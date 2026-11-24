@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import BrandLogo from './BrandLogo';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
+import { aboutPath, investmentsPath, serviceMenuItems } from '../data/siteNavigation';
 
 const Footer = () => {
   const { contacts } = useSiteSettings();
@@ -74,10 +75,14 @@ const Footer = () => {
           <div className="footer-section">
             <h4>Быстрые ссылки</h4>
             <ul className="footer-links">
-              <li><Link to="/services">Услуги разработки</Link></li>
-              <li><Link to="/products?category=miner">Майнинг-оборудование</Link></li>
-              <li><Link to="/crypto">Конвертер криптовалют</Link></li>
-              <li><Link to="/news">Новости</Link></li>
+              {serviceMenuItems.map((item) => (
+                <li key={item.to}><Link to={item.to}>{item.label}</Link></li>
+              ))}
+              <li><Link to="/products?category=miner">Майнеры</Link></li>
+              <li><Link to={aboutPath}>О компании</Link></li>
+              <li><Link to={investmentsPath}>Инвестиции</Link></li>
+              <li><Link to="/blog">Блог</Link></li>
+              <li><Link to="/charts">Графики</Link></li>
               <li><Link to="/profile">Личный кабинет</Link></li>
             </ul>
           </div>

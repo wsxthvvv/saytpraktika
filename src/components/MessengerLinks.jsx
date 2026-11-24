@@ -12,7 +12,7 @@ const MessengerLinks = ({ variant = 'row', className = '' }) => {
   const { contacts } = useSiteSettings();
   const items = [
     { ...MESSENGER_LINKS.telegram, href: contacts.telegramUrl || MESSENGER_LINKS.telegram.href },
-    { ...MESSENGER_LINKS.max, href: contacts.maxUrl },
+    { ...MESSENGER_LINKS.max, href: contacts.maxUrl || MESSENGER_LINKS.max.href },
   ].filter((item) => item.href);
 
   return (

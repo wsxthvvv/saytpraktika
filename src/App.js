@@ -3,6 +3,9 @@ import { Navigate, Routes, Route, useLocation, useParams } from 'react-router-do
 import './App.css';
 import './responsive.css';
 import './styles/storefront.css';
+import './styles/corporate.css';
+import './styles/investments.css';
+import './styles/about.css';
 import { CartProvider, useCart } from './contexts/CartContext';
 import { CryptoRatesProvider } from './contexts/CryptoRatesContext';
 import Header from './components/Header';
@@ -25,11 +28,16 @@ import DocumentHead from './components/DocumentHead';
 import { getCurrentUser, logoutUser, toSessionUser } from './utils/userAuth';
 import AdminPanel from './components/AdminPanel';
 import SiteNotFound from './components/SiteNotFound';
+import DirectionLanding from './components/DirectionLanding';
 import { setSessionUser } from './utils/sessionUser';
 import { SiteSettingsProvider } from './contexts/SiteSettingsContext';
 
 const Home = lazy(() => import('./pages/Home'));
 const ChartsPage = lazy(() => import('./components/ChartsPage'));
+const BlogPage = lazy(() => import('./pages/BlogPage'));
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
+const InvestmentsPage = lazy(() => import('./pages/InvestmentsPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
 const LegacyMinerRedirect = () => {
   const { id } = useParams();
   return <Navigate to={`/products/${encodeURIComponent(id)}`} replace />;
@@ -115,6 +123,14 @@ function AppContent() {
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/" element={<Home />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/it" element={<DirectionLanding slug="it" />} />
+              <Route path="/accounting" element={<DirectionLanding slug="accounting" />} />
+              <Route path="/ai" element={<DirectionLanding slug="ai" />} />
+              <Route path="/mining-services" element={<DirectionLanding slug="mining-services" />} />
+              <Route path="/investments" element={<InvestmentsPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/crypto" element={<CryptoConverter />} />
               <Route

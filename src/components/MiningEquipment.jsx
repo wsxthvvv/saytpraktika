@@ -4,10 +4,10 @@ import Testimonials from './Testimonials';
 import { Link } from 'react-router-dom';
 import ServiceLeadModal from './ServiceLeadModal';
 import { formatUsd } from '../utils/currency';
+import ProductImage from './ProductImage';
 
 const MiningEquipment = () => {
   const { addToCart } = useCart();
-  const [brokenImages, setBrokenImages] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
@@ -28,7 +28,9 @@ const MiningEquipment = () => {
     fetch('/api/products?category=miner')
       .then((response) => response.json())
       .then((data) => {
-        if (data.ok && Array.isArray(data.products)) setMiners(data.products);
+        if (data.ok && Array.isArray(data.products)) {
+          setMiners(data.products.filter((p) => p.id !== 'test-miner-01' && !p.testOnly));
+        }
         else setCatalogError('Не удалось загрузить каталог майнеров');
       })
       .catch(() => setCatalogError('Каталог недоступен. Запустите npm run server.'))
@@ -337,27 +339,12 @@ const MiningEquipment = () => {
             {/* УБРАЛИ БЕЙДЖ */}
             {/* <div className="miner-card__badge">{miner.badge}</div> */}
             <div className="miner-card__image">
-              {miner.image && !brokenImages[miner.id] ? (
-                <img
-                  src={miner.image}
-                  alt={miner.title}
-                  loading="lazy"
-                  decoding="async"
-                  style={{
-                    width: '100%',
-                    height: '120px',
-                    objectFit: 'contain',
-                    borderRadius: '12px'
-                  }}
-                  onError={(e) => {
-                    setBrokenImages((prev) => ({ ...prev, [miner.id]: true }));
-                  }}
-                />
-              ) : (
-                <div className="miner-image-placeholder">
-                  <span className="miner-image-icon">⛏️</span>
-                </div>
-              )}
+              <ProductImage
+                src={miner.image || '/catalog/miner-default.svg'}
+                alt={miner.title}
+                loading="lazy"
+                className="miner-card__photo"
+              />
             </div>
             <header className="miner-card__header">
               <Link to={`/mining/${miner.id}`} className="miner-card__title-link">
@@ -387,7 +374,6 @@ const MiningEquipment = () => {
                 <span className="miner-spec__value">{miner.power}</span>
               </div>
             </div>
-            <p className="miner-card__description">{miner.description}</p>
             <div className="miner-card__actions">
               <Link to={`/mining/${miner.id}`} className="btn-outline miner-card__details-btn">
                 Подробнее

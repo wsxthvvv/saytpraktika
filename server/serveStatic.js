@@ -4,8 +4,8 @@ const path = require('path');
 const BUILD_DIR = path.join(__dirname, '..', 'build');
 const SPA_ROUTES = [
   /^\/$/,
-  /^\/(?:services|products|crypto|profile|cart|news|privacy|consent|mining|charts|admin)\/?$/,
-  /^\/(?:products|mining)\/[^/]+\/?$/,
+  /^\/(?:services|products|crypto|profile|cart|news|privacy|consent|mining|charts|admin|blog|it|accounting|ai|mining-services)\/?$/,
+  /^\/(?:products|mining|blog)\/[^/]+\/?$/,
 ];
 
 const MIME = {

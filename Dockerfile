@@ -26,7 +26,8 @@ ENV HOST=0.0.0.0
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY server ./server
-COPY src/data/serviceCatalog.json ./src/data/serviceCatalog.json
+COPY src/data/servicesCatalog.json ./src/data/servicesCatalog.json
+COPY src/data/blogPosts.json ./src/data/blogPosts.json
 COPY --from=build /app/build ./build
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s \

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PersonalDataConsentCheckbox from './PersonalDataConsentCheckbox';
 import { submitLead } from '../api/submitLead';
 import { formatRussianPhone } from '../utils/phone';
+import { leadFieldsFromUser, profileLeadFields } from '../utils/profileLeadPrefill';
 
 const ServiceLeadModal = ({ service, onClose }) => {
   const [name, setName] = useState('');
@@ -12,6 +13,31 @@ const ServiceLeadModal = ({ service, onClose }) => {
   const [pdError, setPdError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
+
+  useEffect(() => {
+    if (!service) return;
+    let cancelled = false;
+    const applyContacts = (fields) => {
+      if (cancelled) return;
+      setName(fields.name);
+      setPhone(fields.phone);
+      setEmail(service.prefillEmail || fields.email);
+    };
+    applyContacts(profileLeadFields());
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.authenticated || !data.user) return;
+        applyContacts(leadFieldsFromUser(data.user));
+      })
+      .catch(() => {});
+    setComments(service.commentsPreset || '');
+    setPdConsent(false);
+    setPdError('');
+    setDone(null);
+    setBusy(false);
+    return () => { cancelled = true; };
+  }, [service]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -26,14 +52,19 @@ const ServiceLeadModal = ({ service, onClose }) => {
     setDone(null);
     setPdError('');
     setBusy(true);
+    const isCorporate = service?.kind === 'corporate' || Number(service?.id) >= 100;
     const result = await submitLead({
-      type: 'service',
+      type: isCorporate ? 'corporate_service' : 'service',
       topic: service?.title || 'Консультация по услуге',
       name: name.trim(),
       phone: formatRussianPhone(phone),
       email: email.trim(),
       comments: comments.trim() || undefined,
-      itemsSummary: service?.title ? `Услуга: ${service.title}` : undefined,
+      itemsSummary: service?.title ? `Услуга #${service.id}: ${service.title}` : undefined,
+      serviceId: service?.id,
+      serviceKind: service?.kind || (isCorporate ? 'corporate' : 'dev'),
+      serviceCategory: service?.category,
+      direction: service?.direction,
       consent: true,
     });
     setBusy(false);
@@ -71,6 +102,8 @@ const ServiceLeadModal = ({ service, onClose }) => {
             {done?.error && <p className="contact-widget__error" role="alert">{done.error}</p>}
             <p className="service-lead-modal__hint">
               Оставьте телефон или email. Заявка сохранится в системе и будет передана менеджеру. Оборудование для майнинга оформляется через корзину.
+              {' '}
+              Если вы вошли в личный кабинет, контакты подставятся из профиля — их можно изменить перед отправкой.
             </p>
             <div className="service-lead-modal__fields">
               <label className="service-lead-modal__field service-lead-modal__field--full">

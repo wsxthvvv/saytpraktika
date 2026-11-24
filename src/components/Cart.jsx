@@ -26,7 +26,11 @@ const Cart = () => {
         return;
       }
       if (data.user?.role !== 'customer') {
-        setCheckoutMessage('Оформлять заказы могут только аккаунты покупателей.');
+        setCheckoutMessage(
+          data.user?.role === 'admin'
+            ? 'Оформление заказа доступно покупателю. Выйдите из админ-аккаунта и войдите как клиент или зарегистрируйтесь.'
+            : 'Оформлять заказы могут только аккаунты покупателей.',
+        );
         return;
       }
       setShowOrderForm(true);

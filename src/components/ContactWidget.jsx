@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import PersonalDataConsentCheckbox from './PersonalDataConsentCheckbox';
 import { submitLead } from '../api/submitLead';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
+import { leadFieldsFromUser, profileLeadFields } from '../utils/profileLeadPrefill';
 
 const ContactWidget = () => {
   const { contacts } = useSiteSettings();
@@ -59,6 +60,28 @@ const ContactWidget = () => {
       document.removeEventListener('keydown', onEscape);
     };
   }, []);
+
+  const prefillFromProfile = () => {
+    const cached = profileLeadFields();
+    if (cached.name) setName(cached.name);
+    if (cached.phone) setPhone(formatPhone(cached.phone));
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.authenticated || !data.user) return;
+        const fields = leadFieldsFromUser(data.user);
+        if (fields.name) setName(fields.name);
+        if (fields.phone) setPhone(formatPhone(fields.phone));
+      })
+      .catch(() => {});
+  };
+
+  const toggleOpen = () => {
+    setIsOpen((prev) => {
+      if (!prev) prefillFromProfile();
+      return !prev;
+    });
+  };
 
   const handleRequestCall = async (event) => {
     event.preventDefault();
@@ -174,7 +197,7 @@ const ContactWidget = () => {
       <button
         type="button"
         className={`contact-widget__trigger ${isOpen ? 'is-open' : ''}`}
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={toggleOpen}
         aria-label="Открыть контакты и обратную связь"
       >
         ☎

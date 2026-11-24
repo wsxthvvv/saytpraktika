@@ -1,0 +1,114 @@
+[
+    {
+        "id":  1,
+        "category":  "IT",
+        "title":  "IT-аутсорсинг",
+        "desc":  "Полное управление IT-инфраструктурой",
+        "price":  15000,
+        "period":  "month"
+    },
+    {
+        "id":  2,
+        "category":  "IT",
+        "title":  "Техническая поддержка",
+        "desc":  "Оперативное решение IT-проблем",
+        "price":  8000,
+        "period":  "month"
+    },
+    {
+        "id":  3,
+        "category":  "IT",
+        "title":  "Обслуживание 1С",
+        "desc":  "Сопровождение 1С",
+        "price":  12000,
+        "period":  "month"
+    },
+    {
+        "id":  4,
+        "category":  "IT",
+        "title":  "Сетевая инфраструктура",
+        "desc":  "Проектирование и обслуживание сетей",
+        "price":  20000,
+        "period":  "once"
+    },
+    {
+        "id":  5,
+        "category":  "Mining",
+        "title":  "Майнинг-отель",
+        "desc":  "Размещение майнеров в ДЦ",
+        "price":  5000,
+        "period":  "month"
+    },
+    {
+        "id":  6,
+        "category":  "Mining",
+        "title":  "Ремонт майнеров",
+        "desc":  "Диагностика и ремонт ASIC/GPU",
+        "price":  3000,
+        "period":  "once"
+    },
+    {
+        "id":  7,
+        "category":  "Mining",
+        "title":  "Техобслуживание",
+        "desc":  "Регулярное ТО майнинг-оборудования",
+        "price":  2000,
+        "period":  "once"
+    },
+    {
+        "id":  8,
+        "category":  "Mining",
+        "title":  "Консультации",
+        "desc":  "Экспертные консультации по майнингу",
+        "price":  0,
+        "period":  "once"
+    },
+    {
+        "id":  9,
+        "category":  "Accounting",
+        "title":  "Ведение бухгалтерии",
+        "desc":  "Полное бухгалтерское сопровождение",
+        "price":  8000,
+        "period":  "month"
+    },
+    {
+        "id":  10,
+        "category":  "Accounting",
+        "title":  "Налоговый учёт",
+        "desc":  "Подготовка и сдача отчётности",
+        "price":  5000,
+        "period":  "month"
+    },
+    {
+        "id":  11,
+        "category":  "Accounting",
+        "title":  "Кадровый учёт",
+        "desc":  "Кадровое делопроизводство и ЗП",
+        "price":  6000,
+        "period":  "month"
+    },
+    {
+        "id":  12,
+        "category":  "AI",
+        "title":  "Автоматизация",
+        "desc":  "ИИ-автоматизация бизнес-процессов",
+        "price":  30000,
+        "period":  "once"
+    },
+    {
+        "id":  13,
+        "category":  "AI",
+        "title":  "Чат-боты",
+        "desc":  "Интеллектуальные боты для бизнеса",
+        "price":  25000,
+        "period":  "once"
+    },
+    {
+        "id":  14,
+        "category":  "AI",
+        "title":  "Аналитика",
+        "desc":  "ИИ-аналитика и прогнозирование",
+        "price":  40000,
+        "period":  "once"
+    }
+]

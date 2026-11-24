@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "offers": [
+    { "id": 1, "kind": "dev", "title": "Frontend разработка (React)" },
+    { "id": 2, "kind": "dev", "title": "Верстка сайтов" },
+    { "id": 3, "kind": "dev", "title": "UI/UX дизайн" },
+    { "id": 4, "kind": "dev", "title": "Backend разработка (Python/Django)" },
+    { "id": 5, "kind": "dev", "title": "API разработка" },
+    { "id": 6, "kind": "dev", "title": "Администрирование БД" },
+    { "id": 7, "kind": "dev", "title": "Full-stack разработка" },
+    { "id": 8, "kind": "dev", "title": "Техническая консультация" },
+
+    { "id": 101, "kind": "corporate", "category": "IT", "direction": "it", "title": "IT-аутсорсинг", "desc": "Полное управление IT-инфраструктурой", "price": 15000, "period": "month" },
+    { "id": 102, "kind": "corporate", "category": "IT", "direction": "it", "title": "Техническая поддержка", "desc": "Оперативное решение IT-проблем", "price": 8000, "period": "month" },
+    { "id": 103, "kind": "corporate", "category": "IT", "direction": "it", "title": "Обслуживание 1С", "desc": "Сопровождение 1С:Бухгалтерия и 1С:УТ", "price": 12000, "period": "month" },
+    { "id": 104, "kind": "corporate", "category": "IT", "direction": "it", "title": "Сетевая инфраструктура", "desc": "Проектирование и обслуживание сетей", "price": 20000, "period": "once" },
+    { "id": 105, "kind": "corporate", "category": "Mining", "direction": "mining-services", "title": "Майнинг-отель", "desc": "Размещение майнеров в ДЦ", "price": 5000, "period": "month" },
+    { "id": 106, "kind": "corporate", "category": "Mining", "direction": "mining-services", "title": "Ремонт майнеров", "desc": "Диагностика и ремонт ASIC/GPU", "price": 3000, "period": "once" },
+    { "id": 107, "kind": "corporate", "category": "Mining", "direction": "mining-services", "title": "Техобслуживание", "desc": "Регулярное ТО майнинг-оборудования", "price": 2000, "period": "once" },
+    { "id": 108, "kind": "corporate", "category": "Mining", "direction": "mining-services", "title": "Консультации", "desc": "Экспертные консультации по майнингу", "price": 0, "period": "once" },
+    { "id": 109, "kind": "corporate", "category": "Accounting", "direction": "accounting", "title": "Ведение бухгалтерии", "desc": "Полное бухгалтерское сопровождение", "price": 8000, "period": "month" },
+    { "id": 110, "kind": "corporate", "category": "Accounting", "direction": "accounting", "title": "Налоговый учёт", "desc": "Подготовка и сдача отчётности", "price": 5000, "period": "month" },
+    { "id": 111, "kind": "corporate", "category": "Accounting", "direction": "accounting", "title": "Кадровый учёт", "desc": "Кадровое делопроизводство и ЗП", "price": 6000, "period": "month" },
+    { "id": 112, "kind": "corporate", "category": "AI", "direction": "ai", "title": "Автоматизация бизнес-процессов", "desc": "ИИ-автоматизация рутинных задач", "price": 30000, "period": "once" },
+    { "id": 113, "kind": "corporate", "category": "AI", "direction": "ai", "title": "Чат-боты и виртуальные ассистенты", "desc": "Боты для сайта, мессенджеров и продаж", "price": 25000, "period": "once" },
+    { "id": 114, "kind": "corporate", "category": "AI", "direction": "ai", "title": "Аналитические решения", "desc": "Прогнозирование и сегментация с ИИ", "price": 40000, "period": "once" },
+    { "id": 115, "kind": "corporate", "category": "Accounting", "direction": "accounting", "title": "Финансовая аналитика", "desc": "Управленческая отчётность и KPI", "price": 15000, "period": "month" },
+    { "id": 116, "kind": "corporate", "category": "AI", "direction": "ai", "title": "Компьютерное зрение", "desc": "Распознавание и видеоаналитика", "price": 60000, "period": "once" },
+    { "id": 117, "kind": "corporate", "category": "AI", "direction": "ai", "title": "Машинное обучение", "desc": "ML-модели под задачи бизнеса", "price": 80000, "period": "once" },
+    { "id": 118, "kind": "corporate", "category": "AI", "direction": "ai", "title": "AI-консультации", "desc": "Аудит процессов и roadmap внедрения", "price": 15000, "period": "once" }
+  ]
+}

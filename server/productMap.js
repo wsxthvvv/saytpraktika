@@ -26,6 +26,7 @@ const mapProductRow = (row, options = {}) => {
   if (options.minerShape || row.category === 'miner') {
     return {
       ...metadata,
+      metadata,
       id: String(row.id),
       title: row.title,
       category: row.category,

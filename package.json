@@ -28,6 +28,7 @@
     "db:up": "docker compose up -d db",
     "db:reset": "docker compose down -v && docker compose up -d db",
     "admin:hash-password": "node scripts/hash-admin-password.js",
+    "blog:import": "node scripts/extract-01service-blog.js",
     "dev:api": "node server/index.js",
     "build": "react-scripts build",
     "start:prod": "node server/index.js",

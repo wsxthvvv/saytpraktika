@@ -1,12 +1,16 @@
 // src/components/Services.jsx
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Testimonials from './Testimonials';
+import CorporateServiceCatalog from './CorporateServiceCatalog';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
-import serviceCatalog from '../data/serviceCatalog.json';
+import { getDevOffers } from '../utils/servicesCatalog';
 
-const SERVICE_TITLES = new Map(serviceCatalog.map((service) => [service.id, service.title]));
+const SERVICE_TITLES = new Map(getDevOffers().map((service) => [service.id, service.title]));
 
 const Services = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const kind = searchParams.get('kind') === 'dev' ? 'dev' : 'corporate';
   const { contacts } = useSiteSettings();
   const [selectedService, setSelectedService] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -318,6 +322,28 @@ const Services = () => {
 
   return (
     <>
+    <div className="product-categories services-kind-tabs" role="tablist" aria-label="Тип услуг">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={kind === 'corporate'}
+        className={`product-category${kind === 'corporate' ? ' is-active' : ''}`}
+        onClick={() => setSearchParams({ kind: 'corporate' })}
+      >
+        Корпоративные
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={kind === 'dev'}
+        className={`product-category${kind === 'dev' ? ' is-active' : ''}`}
+        onClick={() => setSearchParams({ kind: 'dev' })}
+      >
+        Разработка
+      </button>
+    </div>
+    {kind === 'corporate' ? <CorporateServiceCatalog /> : null}
+    {kind === 'dev' ? (
     <section className="services-section">
       <div className="services-header">
         <div>
@@ -427,8 +453,9 @@ const Services = () => {
           </div>
         </div>
       )}
+      <Testimonials subtitle="Отзывы о разработке и IT-сервисе" />
     </section>
-    <Testimonials subtitle="Отзывы о разработке и IT-сервисе" />
+    ) : null}
     </>
   );
 };

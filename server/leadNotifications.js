@@ -13,6 +13,10 @@ const formatLeadMessage = (payload) => {
 
   if (payload.name) lines.push(`Имя: ${escapeHtml(payload.name)}`);
   if (!isOrder && payload.topic) lines.push(`Тема: ${escapeHtml(payload.topic)}`);
+  if (!isOrder && payload.metadata?.serviceId) {
+    lines.push(`Услуга ID: ${escapeHtml(String(payload.metadata.serviceId))}`);
+    if (payload.metadata.serviceCategory) lines.push(`Категория: ${escapeHtml(payload.metadata.serviceCategory)}`);
+  }
   if (payload.phone) lines.push(`Телефон: ${escapeHtml(payload.phone)}`);
   if (payload.email) lines.push(`Email: ${escapeHtml(payload.email)}`);
   if (payload.address) lines.push(`Адрес: ${escapeHtml(payload.address)}`);

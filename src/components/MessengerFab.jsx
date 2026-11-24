@@ -6,7 +6,7 @@ const MessengerFab = () => {
   const { contacts } = useSiteSettings();
   const fabItems = [
     { ...MESSENGER_LINKS.telegram, href: contacts.telegramUrl || MESSENGER_LINKS.telegram.href, Icon: TelegramIcon },
-    { ...MESSENGER_LINKS.max, href: contacts.maxUrl, Icon: MaxIcon },
+    { ...MESSENGER_LINKS.max, href: contacts.maxUrl || MESSENGER_LINKS.max.href, Icon: MaxIcon },
   ].filter((item) => item.href);
   return (
   <div className="messenger-fab" aria-label="Быстрые мессенджеры">

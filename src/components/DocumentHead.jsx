@@ -15,6 +15,34 @@ const ROUTE_META = {
     title: `Услуги разработки | ${SITE}`,
     description: 'Создание сайтов, маркетплейсов и интеграций под ключ.',
   },
+  '/blog': {
+    title: `Блог | ${SITE}`,
+    description: 'IT, майнинг, бухгалтерия и ИИ — статьи и кейсы 01 СЕРВИС.',
+  },
+  '/it': {
+    title: `IT-услуги | ${SITE}`,
+    description: 'Аутсорсинг, техподдержка, 1С и сетевая инфраструктура.',
+  },
+  '/accounting': {
+    title: `Бухгалтерия | ${SITE}`,
+    description: 'Ведение учёта, налоги и кадровое делопроизводство.',
+  },
+  '/ai': {
+    title: `ИИ-решения | ${SITE}`,
+    description: 'Автоматизация, чат-боты и аналитика для бизнеса.',
+  },
+  '/mining-services': {
+    title: `Майнинг-сервис | ${SITE}`,
+    description: 'Майнинг-отель, ремонт и техобслуживание оборудования.',
+  },
+  '/investments': {
+    title: `Инвестиции в майнинг — 22% годовых | ${SITE}`,
+    description: 'Инвестиции в майнинг с фиксированной доходностью, калькулятор, отчётность и консультация.',
+  },
+  '/about': {
+    title: `О компании | ${SITE}`,
+    description: '01 СЕРВИС — IT, майнинг, бухгалтерия, ИИ. Контакты, график работы и направления.',
+  },
   '/products': {
     title: `Товары и майнинг-оборудование | ${SITE}`,
     description: 'Майнинг-оборудование, компьютеры и серверы в едином каталоге.',
@@ -61,7 +89,7 @@ const DocumentHead = () => {
   const { pathname } = useLocation();
   const meta = ROUTE_META[pathname] || DEFAULT;
   const isPrivate = ['/admin', '/cart', '/profile'].includes(pathname);
-  const isKnown = Boolean(ROUTE_META[pathname] || /^\/(?:mining|products)\/[^/]+$/.test(pathname));
+  const isKnown = Boolean(ROUTE_META[pathname] || /^\/(?:mining|products|blog)\/[^/]+$/.test(pathname));
   const canonical = isKnown && !isPrivate && typeof window !== 'undefined'
     && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
     ? `${window.location.origin}${pathname}`

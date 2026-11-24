@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { isCartEligibleItem } from '../utils/cartItem';
-import { isAdminSession, readStoredUser } from '../utils/sessionUser';
+import { readStoredUser } from '../utils/sessionUser';
+
+const itemId = (id) => String(id);
 
 const CartContext = createContext(null);
 const GUEST_CART_KEY = '01service_guest_cart_v2';
@@ -124,23 +126,34 @@ export const CartProvider = ({ children }) => {
   }, [cart, pushAccountCart, user]);
 
   const addToCart = (item) => {
-    if (isAdminSession() || !isCartEligibleItem(item) || item.currency !== 'USD' || !item.isAvailable) return false;
+    if (!isCartEligibleItem(item) || item.currency !== 'USD' || !item.isAvailable) return false;
+    const nextId = itemId(item.id);
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) return prev.map((i) => i.id === item.id
-        ? { ...i, ...item, quantity: Math.min(Number(item.stock || 100), (i.quantity || 1) + 1) } : i);
-      return [...prev, { ...item, currency: 'USD', quantity: 1 }];
+      const existing = prev.find((i) => itemId(i.id) === nextId);
+      if (existing) {
+        return prev.map((i) => (itemId(i.id) === nextId
+          ? {
+            ...i,
+            ...item,
+            id: nextId,
+            quantity: Math.min(Number(item.stock || 100), (i.quantity || 1) + 1),
+          }
+          : i));
+      }
+      return [...prev, { ...item, id: nextId, currency: 'USD', quantity: 1 }];
     });
     return true;
   };
 
-  const removeFromCart = (id) => setCart((prev) => prev.filter((item) => item.id !== id));
+  const removeFromCart = (id) => setCart((prev) => prev.filter((item) => itemId(item.id) !== itemId(id)));
   const updateQuantity = (id, quantity) => {
     if (quantity <= 0) { removeFromCart(id); return; }
-    setCart((prev) => prev.map((item) => item.id === id
-      ? { ...item, quantity: Math.min(Number(item.stock || 100), Math.max(1, Number(quantity) || 1)) } : item));
+    const targetId = itemId(id);
+    setCart((prev) => prev.map((item) => (itemId(item.id) === targetId
+      ? { ...item, quantity: Math.min(Number(item.stock || 100), Math.max(1, Number(quantity) || 1)) }
+      : item)));
   };
-  const updateCartItem = (id, patch) => setCart((prev) => prev.map((item) => item.id === id ? { ...item, ...patch } : item));
+  const updateCartItem = (id, patch) => setCart((prev) => prev.map((item) => (itemId(item.id) === itemId(id) ? { ...item, ...patch } : item)));
   const clearCart = () => setCart([]);
   const total = cart.reduce((sum, item) => sum + Number(item.price) * (item.quantity || 1), 0);
   const itemCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
